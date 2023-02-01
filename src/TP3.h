@@ -10,7 +10,6 @@
 #define MODBUSTP_H
 
 #include "Common.h"
-#include "SocketPort.h"
 #include "SerialPort.h"
 
 typedef enum typerequest {
