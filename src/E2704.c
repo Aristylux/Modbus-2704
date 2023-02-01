@@ -1,10 +1,20 @@
 // modbusTP.c
-//
+
 #include <string.h>
 
 #include "debug.h"
 #include "Modbus.h"
 #include "E2704.h"
+
+typedef struct E2704_config
+{
+	int port;
+	int baud;
+	int bits;
+	int bit_parity;
+	int bit_stop;
+} T_E2704_config ;
+
 
 int GlobaleAdresseRegulatorModbus = 1;
 
@@ -43,29 +53,36 @@ HANDLE connectionSerialPort()
     // A COMPLETER
 	printDebug("connectionSerialPort", "");
 
-	int port = 0, speed = 0, bits = 0, parity = 0, stop = 0;
-
+	T_E2704_config config = {2, 9600, 8, 0, 0};
+	/*
+	config.port = 2;
+	config.baud = 9600;
+	config.bits = 8;
+	config.bit_parity = 0;
+	config.bit_stop = 0;
+	*/
+/*
 	printf("Entrer le numero de port : ");
-	scanf("%d", &port); //2
+	scanf("%d", &config.port); //2
 
 	puts("*********** Parametrage du port serie ***********");
 	printf("Entrer la vitesse de transmission : ");
-	scanf("%d", &speed); //9600
+	scanf("%d", &config.baud); //9600
 
 	printf("Entrer le nombre de bits de donnees? (5-8) : ");
-	scanf("%d", &bits);	//8
+	scanf("%d", &config.bits);	//8
 
 	printf("Entrer la parite? 0 (pas de parite) / 1 (Parite impair) / 2 (Partie pair) : ");
-	scanf("%d", &parity); //0
+	scanf("%d", &config.bit_parity); //0
 
 	printf("Entrer le nombre de bits de stop? 0 (1 bit) / 1 (1.5 bits) / 2 (2 bits) : ");
-	scanf("%d", &stop); //0
+	scanf("%d", &config.bit_stop); //0
+*/
+	printf("recap port: COM%d, speed=%d, bits=%d, parity=%d, stop=%d\n", config.port, config.baud, config.bits, config.bit_parity, config.bit_stop);
 
-	printf("recap port: COM%d, speed=%d, bits=%d, parity=%d, stop=%d\n", port, speed, bits, parity, stop);
+	handleSerialPort = createSerialPort(config.port);
 
-	handleSerialPort = createSerialPort(port);
-
-	BOOL success = setParamSerialPort(handleSerialPort, speed, bits, parity, stop);
+	BOOL success = setParamSerialPort(handleSerialPort, config.baud, config.bits, config.bit_parity, config.bit_stop);
 	if (success != TRUE) {
 		printDebug("connectionSerialPort", "Com ERROR");
 		puts("Verifier que le port n'est pas utilisé.");
@@ -128,7 +145,7 @@ int createRequestTrame(TypeRequest i_requestType, char* i_trameSend, TypeVal* i_
 					short valueSHORT;
 					scanf("%hd", &valueSHORT);
 					printDebug("createRequestTrame", "ECRITURE SHORT");
-					lengthTrameSend = makeTrameEcrModBusFromShort(address_slave, MODBUS_FUNCTION_WRITE_WORDS, startAddress, valueSHORT, i_trameSend, INTEL);
+					lengthTrameSend = makeTrameEcrModBusFromShort(address_slave, MODBUS_FUNCTION_WRITE_WORD, startAddress, valueSHORT, i_trameSend, INTEL);
 				break;
 			case TYPE_INT:
 					int valueINT;
