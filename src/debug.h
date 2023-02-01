@@ -11,6 +11,7 @@
 
 typedef enum typemode {
   MODE_HELP = 0,
+  MODE_MAIN,
   MODE_DEBUG,
   MODE_ERROR_TMA, // too many arguments
   MODE_ERROR_IA   // invalid argument

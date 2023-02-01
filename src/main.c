@@ -17,6 +17,8 @@ int main(int argc, char **argv)
     // -- Check arguments --
     switch (checkArguments(argc, argv))
     {
+    case MODE_MAIN:
+        break;
     case MODE_HELP:
         printHelp();
         return EXIT_SUCCESS;

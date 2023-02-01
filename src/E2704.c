@@ -20,7 +20,13 @@ int GlobaleAdresseRegulatorModbus = 1;
 
 void E2704_main(HANDLE hPort)
 {
-	printf("\n\tPress 'q' to quit program.\n\tExecute .\\Mod_E2704 -h for help.\n\n");
+
+	TypeRequest requestType = NO_REQUEST;
+	TypeVal typeVal = NO_TYPE;
+
+	int i = 0;
+
+	printf("\n\tPress 'q' to quit program.\n\tExecute .\\Mod_E2704 -h for help.\n\n\n");
 
 	clock_t begin, end;
 	begin = clock();
@@ -34,7 +40,35 @@ void E2704_main(HANDLE hPort)
 		{
 			begin = end;
 
-			printf("This information is being printed every second\n");
+			
+			char trameToSend[100];
+			int lengthTrameToSend = 0;
+			char trameReceived[100];
+			int lengthTrameReceived = 99;
+			memset(trameReceived, '\0', sizeof(trameReceived));
+
+			ErrorComm codret = ERRORCOMM_ERROR;
+
+			// Creation de la trame de requete Modbus
+			lengthTrameToSend = createRequestTrame(requestType, trameToSend, &typeVal);
+
+			// Envoie de la requete Modbus sur le supporte de communication et reception de la trame reponse
+			if (lengthTrameToSend)
+				codret = sendAndReceiveSerialPort(hPort, INFINITE, trameToSend, lengthTrameToSend, trameReceived, &lengthTrameReceived);
+
+			// Decodage de la trame reçue
+			if (codret != ERRORCOMM_NOERROR || lengthTrameReceived == 0)
+				printState(codret);
+			else
+			{
+			codret = parseModbusResponse(trameReceived, lengthTrameReceived, requestType, typeVal);
+				if (codret != ERRORCOMM_NOERROR)
+					printState(codret);
+			}
+	
+
+			printf("\033[1ACode -> %5d.\n", i);
+			i++;
 		}
 
 		// Keybord interruption

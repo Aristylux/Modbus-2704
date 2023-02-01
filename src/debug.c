@@ -6,7 +6,9 @@ void printDebug(char * function, char * message) {
 }
 
 int checkArguments(int argc, char ** argv){
-	if (argc == 2)
+	if (argc == 1)
+        return MODE_MAIN;
+    else if (argc == 2)
     {
         // Print help
         if (strcmp(argv[1], "-h") == 0)
