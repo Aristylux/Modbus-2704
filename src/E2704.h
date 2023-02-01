@@ -30,13 +30,24 @@ typedef enum typeval {
   } TypeVal;
 
 
-void printState(ErrorComm codret);
+// Main program for E2704
+void E2704_main(HANDLE hPort);
+
+// Debug, like TP3
+void E2704_debug(HANDLE hPort);
 
 HANDLE connectionSerialPort();
 
 int createRequestTrame(TypeRequest i_requestType, char* i_trameSend, TypeVal* i_typeVal);
 ErrorComm parseModbusResponse(char* i_trameReceive, int i_lengthTrameReceived, TypeRequest i_requestType, TypeVal i_typeVal);
 
+// Print State of the connection
+void printState(ErrorComm codret);
+
+// Print a trame in Hex
 void printTrame(char * type, char trame[100], int lenghtTrame);
+
+// Print help
+void printHelp(void);
 
 #endif
