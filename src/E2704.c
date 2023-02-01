@@ -2,8 +2,9 @@
 //
 #include <string.h>
 
+#include "debug.h"
 #include "Modbus.h"
-#include "TP3.h"
+#include "E2704.h"
 
 int GlobaleAdresseRegulatorModbus = 1;
 
@@ -34,25 +35,13 @@ void printState(ErrorComm codret)
 	return;
 }
 
-// TODO (a enlever)
-SOCKET connectionTCPIpPort()
-{
-    BOOL connexionOk = FALSE;
-    SOCKET idConnexionSocket = INVALID_SOCKET;
-
-    // A COMPLETER
-	puts("[DEBUG] connectionTCPIpPort:");
-
-    return idConnexionSocket;
-}
-
 HANDLE connectionSerialPort()
 {
     BOOL connexionOk = FALSE;
     HANDLE handleSerialPort = NULL;
 
     // A COMPLETER
-	puts("[DEBUG] connectionSerialPort:");
+	printDebug("connectionSerialPort", "");
 
 	int port = 0, speed = 0, bits = 0, parity = 0, stop = 0;
 
@@ -78,12 +67,12 @@ HANDLE connectionSerialPort()
 
 	BOOL success = setParamSerialPort(handleSerialPort, speed, bits, parity, stop);
 	if (success != TRUE) {
-		puts("[DEBUG] Com ERROR");
+		printDebug("connectionSerialPort", "Com ERROR");
 		puts("Verifier que le port n'est pas utilisé.");
 		terminateSerialPort(handleSerialPort);
 		handleSerialPort = NULL;
 	} else
-		puts("[DEBUG] Com OK");
+		printDebug("connectionSerialPort", "Com OK");
 
     return handleSerialPort;
 }
@@ -109,7 +98,7 @@ int createRequestTrame(TypeRequest i_requestType, char* i_trameSend, TypeVal* i_
             scanf("%d", i_typeVal);
 
             // A COMPLETER (fait)
-			puts("[DEBUG] createRequestTrame: LECTURE");
+			printDebug("createRequestTrame", "LECTURE");
 
 			if (*i_typeVal == TYPE_SHORT) nbParamsToread = 1;
 			else if (*i_typeVal == TYPE_INT || *i_typeVal == TYPE_FLOAT) nbParamsToread = 2;
@@ -130,26 +119,27 @@ int createRequestTrame(TypeRequest i_requestType, char* i_trameSend, TypeVal* i_
 			printf("Entre la valeur a ecrire?\n");
 
             // A COMPLETER (fait)
-			puts("[DEBUG] createRequestTrame: ECRITURE");
+			printDebug("createRequestTrame", "ECRITURE");
 
 			switch (*i_typeVal)
 			{
 			case TYPE_SHORT:
+			// TODO Error ici
 					short valueSHORT;
 					scanf("%hd", &valueSHORT);
-					puts("[DEBUG] createRequestTrame: ECRITURE SHORT");
+					printDebug("createRequestTrame", "ECRITURE SHORT");
 					lengthTrameSend = makeTrameEcrModBusFromShort(address_slave, MODBUS_FUNCTION_WRITE_WORDS, startAddress, valueSHORT, i_trameSend, INTEL);
 				break;
 			case TYPE_INT:
 					int valueINT;
 					scanf("%d", &valueINT);
-					puts("[DEBUG] createRequestTrame: ECRITURE INT");
+					printDebug("createRequestTrame", "INT");
 					lengthTrameSend = makeTrameEcrModBusFromInt(address_slave, MODBUS_FUNCTION_WRITE_WORDS, startAddress, valueINT, i_trameSend, INTEL);
 				break;
 			case TYPE_FLOAT:
 					float valueFLOAT;
 					scanf("%f", &valueFLOAT);
-					puts("[DEBUG] createRequestTrame: ECRITURE FLOAT");
+					printDebug("createRequestTrame", "FLOAT");
 					lengthTrameSend = makeTrameEcrModBusFromFloat(address_slave, MODBUS_FUNCTION_WRITE_WORDS, startAddress, valueFLOAT, i_trameSend, INTEL);
 				break;
 			}
@@ -164,7 +154,7 @@ ErrorComm parseModbusResponse(char* i_trameReceive, int i_lengthTrameReceived, T
 	ErrorComm codret = ERRORCOMM_ERROR;
 	
     // A COMPLETER (fait)
-	puts("[DEBUG] parseModbusResponse:");
+	printDebug("parseModbusResponse", "");
 
 	int address = 1;
 	char valuec[100];
