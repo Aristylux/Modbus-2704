@@ -7,39 +7,31 @@
 
 int main(int argc, char **argv)
 {
-    // Welcome message
+    BOOL debugEnabled = FALSE;
+
+    // -- Welcome message --
     printf("****************************************************************************\n");
     printf("*                         PROTOCOLE MODBUS E2704                           *\n");
     printf("****************************************************************************\n");
 
-    BOOL debugEnabled = FALSE;
-
-    // Check arguments
-    if (argc == 2)
+    // -- Check arguments --
+    switch (checkArguments(argc, argv))
     {
-        // Print help
-        if (strcmp(argv[1], "-h") == 0)
-        {
-            printHelp();
-            return EXIT_SUCCESS;
-        }
-        // Enable debug mode (like TP3)
-        else if (strcmp(argv[1], "-d") == 0)
-            debugEnabled = TRUE;
-        else
-        {
-            printf("Invalid Arguments");
-            return EXIT_FAILURE;
-        }
-    }
-    else if (argc >= 3)
-    {
-        // Print error
+    case MODE_HELP:
+        printHelp();
+        return EXIT_SUCCESS;
+    case MODE_ERROR_IA:
+        puts("Invalid Arguments");
+        return EXIT_FAILURE;
+    case MODE_ERROR_TMA:
         puts("Too many arguments");
         return EXIT_FAILURE;
+    case MODE_DEBUG:
+        debugEnabled = TRUE;
     }
-
+    
     // -- Connection --
+    printDebug("main", "open modbus connection");
     HANDLE handleSerialPort = NULL;
 
     // Creation et ouverture du support de communication
@@ -49,7 +41,7 @@ int main(int argc, char **argv)
     if (handleSerialPort == NULL)
     {
         puts("Echec de connexion.");
-        return 1;
+        return EXIT_FAILURE;
     }
 
     // -- Main program --
