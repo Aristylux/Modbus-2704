@@ -32,7 +32,6 @@ typedef enum typeval {
 
 void printState(ErrorComm codret);
 
-SOCKET connectionTCPIpPort();
 HANDLE connectionSerialPort();
 
 int createRequestTrame(TypeRequest i_requestType, char* i_trameSend, TypeVal* i_typeVal);

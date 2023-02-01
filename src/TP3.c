@@ -34,18 +34,6 @@ void printState(ErrorComm codret)
 	return;
 }
 
-// TODO (a enlever)
-SOCKET connectionTCPIpPort()
-{
-    BOOL connexionOk = FALSE;
-    SOCKET idConnexionSocket = INVALID_SOCKET;
-
-    // A COMPLETER
-	puts("[DEBUG] connectionTCPIpPort:");
-
-    return idConnexionSocket;
-}
-
 HANDLE connectionSerialPort()
 {
     BOOL connexionOk = FALSE;
