@@ -2,29 +2,77 @@
 #include <stdio.h>
 #include <sys/types.h>
 
+#include <conio.h>      // keybord interruption
+#include <time.h>       // clock()
+
 #include "debug.h"
 #include "E2704.h"
 #include "Modbus.h"
 
-int main(void)
+int main(int argc, char** argv)
 {
-    BOOL connexionOk = FALSE;
+    // Welcome message
+    printf("****************************************************************************\n");
+    printf("*                         PROTOCOLE MODBUS E2704                           *\n");
+    printf("****************************************************************************\n");
+
+    // Check arguments
+    if(argc == 2){
+        if (strcmp(argv[1], "-h") == 0){
+            // Print help
+
+        }
+        return EXIT_SUCCESS;
+    } else if (argc >= 3) {
+        // Print error
+        puts("Too many arguments");
+        return EXIT_FAILURE;
+    }
+
+    // Main program
     HANDLE handleSerialPort = NULL;
-
-    printf("****************************************************************************\n");
-    printf("*                             PROTOCOLE MODBUS                             *\n");
-    printf("****************************************************************************\n");
-
-    //*******************************************************************************
+    
     // Creation et ouverture du support de communication
     handleSerialPort = connectionSerialPort();
     //*******************************************************************************
 
-    if (handleSerialPort == NULL)
-    {
-        printf("Echec de connexion.");
+    // If the connection is not established, exit 
+    if (handleSerialPort == NULL){
+        puts("Echec de connexion.");
         return 1;
     }
+    
+    printf("\n\tPress 'q' to quit program.\n\tExecute .\\Mod_E2704 -h for help.\n\n");   
+
+    clock_t begin, end;
+    begin = clock();
+    while (1)
+    {
+        // Get new tick
+        end = clock();
+
+        // If total tick > 1s, update & execute 
+        if((end - begin) >= 1000) {
+            begin = end;
+
+            printf("This information is being printed every second\n");
+        }
+        
+        // Keybord interruption
+        if (kbhit())
+        {
+            char c = getch();
+            if (c == 'q')
+                break;
+        }
+
+        // Wait 10ms to avoid over speed processor
+        Sleep(10);
+    }
+
+
+    
+    
 
     TypeRequest requestType = NO_REQUEST;
     TypeVal typeVal = NO_TYPE;
@@ -79,13 +127,9 @@ int main(void)
         }
     }
 
-    //*******************************************************************************
     // Fermeture du support de communication
-
-    // A COMPLETER (fait)
     printDebug("main", "close modbus connection");
     terminateSerialPort(handleSerialPort);
 
-    //*******************************************************************************
-    return 0;
+    return EXIT_SUCCESS;
 }

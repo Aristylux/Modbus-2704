@@ -78,12 +78,12 @@ HANDLE connectionSerialPort()
 	printf("Entrer le nombre de bits de stop? 0 (1 bit) / 1 (1.5 bits) / 2 (2 bits) : ");
 	scanf("%d", &config.bit_stop); //0
 */
-	printf("recap port: COM%d, speed=%d, bits=%d, parity=%d, stop=%d\n", config.port, config.baud, config.bits, config.bit_parity, config.bit_stop);
+	printf("Connection: COM%d, baud=%d, bits=%d, parity=%d, stop=%d\n", config.port, config.baud, config.bits, config.bit_parity, config.bit_stop);
 
 	handleSerialPort = createSerialPort(config.port);
+	connexionOk = setParamSerialPort(handleSerialPort, config.baud, config.bits, config.bit_parity, config.bit_stop);
 
-	BOOL success = setParamSerialPort(handleSerialPort, config.baud, config.bits, config.bit_parity, config.bit_stop);
-	if (success != TRUE) {
+	if (connexionOk != TRUE) {
 		printDebug("connectionSerialPort", "Com ERROR");
 		puts("Verifier que le port n'est pas utilisé.");
 		terminateSerialPort(handleSerialPort);
