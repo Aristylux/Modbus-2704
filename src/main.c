@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <sys/types.h>
 
-#include "TP3.h"
+#include "E2704.h"
 #include "Modbus.h"
 
 int main(void)
@@ -71,7 +71,7 @@ int main(void)
         else
         {
             printTrame("Receive", trameReceived, lengthTrameReceived);
-            
+
             codret = parseModbusResponse(trameReceived, lengthTrameReceived, requestType, typeVal);
             if (codret != ERRORCOMM_NOERROR) printState(codret);
             //*******************************************************************************
