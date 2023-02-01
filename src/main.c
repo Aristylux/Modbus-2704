@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <sys/types.h>
 
+#include "debug.h"
 #include "E2704.h"
 #include "Modbus.h"
 
@@ -59,7 +60,7 @@ int main(void)
         if (lengthTrameToSend)
         {
             // A COMPLETER (fait)
-            puts("[DEBUG] main: set request modbus");
+            printDebug("main", "set request modbus");
             codret = sendAndReceiveSerialPort(handleSerialPort, INFINITE, trameToSend, lengthTrameToSend, trameReceived, &lengthTrameReceived);
 
             printf("code: %d, lengthTrameReceived: %d", codret, lengthTrameReceived);
@@ -82,7 +83,7 @@ int main(void)
     // Fermeture du support de communication
 
     // A COMPLETER (fait)
-    puts("[DEBUG] main: close modbus connection");
+    printDebug("main", "close modbus connection");
     terminateSerialPort(handleSerialPort);
 
     //*******************************************************************************
