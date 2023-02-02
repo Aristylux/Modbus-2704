@@ -7,15 +7,6 @@
 #include "Modbus.h"
 #include "E2704.h"
 
-typedef struct E2704_config
-{
-	int port;
-	int baud;
-	int bits;
-	int bit_parity;
-	int bit_stop;
-} T_E2704_config;
-
 int GlobaleAdresseRegulatorModbus = 1;
 
 void E2704_main(HANDLE hPort)
@@ -40,7 +31,7 @@ void E2704_main(HANDLE hPort)
 		{
 			begin = end;
 
-			
+			/*
 			char trameToSend[100];
 			int lengthTrameToSend = 0;
 			char trameReceived[100];
@@ -65,7 +56,7 @@ void E2704_main(HANDLE hPort)
 				if (codret != ERRORCOMM_NOERROR)
 					printState(codret);
 			}
-	
+			*/
 
 			printf("\033[1ACode -> %5d.\n", i);
 			i++;
@@ -74,8 +65,8 @@ void E2704_main(HANDLE hPort)
 		// Keybord interruption
 		if (kbhit())
 		{
-			char c = getch();
-			if (c == 'q')
+			char key = getch();
+			if (key == 'q')
 				break;
 		}
 
@@ -183,7 +174,7 @@ HANDLE connectionSerialPort()
 	if (connexionOk != TRUE)
 	{
 		printDebug("connectionSerialPort", "Com ERROR");
-		puts("Verifier que le port n'est pas utilisé.");
+		puts("Verify that the port is plugged in and not in use.");
 		terminateSerialPort(handleSerialPort);
 		handleSerialPort = NULL;
 	}
