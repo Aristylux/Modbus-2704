@@ -11,14 +11,24 @@ int GlobaleAdresseRegulatorModbus = 1;
 
 void E2704_main(HANDLE hPort)
 {
+	E2704_RegulationMode mode = 0;
+	short consigne;
 
-	TypeRequest requestType = NO_REQUEST;
-	TypeVal typeVal = NO_TYPE;
+	// Ask user modes & consigne
+	E2704_ask_service(&mode, &consigne);
 
-	int i = 0;
+	printf("mode: %d, consigne: %d\n", mode, consigne);
+	// Send consigne & mode to E2704
+	E2704_set_regulation_mode(hPort, mode);
+	E2704_set_consigne(hPort, mode, consigne);
 
 	printf("\n\tPress 'q' to quit program.\n\tExecute .\\Mod_E2704 -h for help.\n\n\n");
 
+	// Print table
+
+	// Print legend
+
+	int i = 0;
 	clock_t begin, end;
 	begin = clock();
 	while (1)
@@ -31,32 +41,17 @@ void E2704_main(HANDLE hPort)
 		{
 			begin = end;
 
-			/*
-			char trameToSend[100];
-			int lengthTrameToSend = 0;
-			char trameReceived[100];
-			int lengthTrameReceived = 99;
-			memset(trameReceived, '\0', sizeof(trameReceived));
+			// Get data CH1
 
-			ErrorComm codret = ERRORCOMM_ERROR;
+			// Print data CH1
 
-			// Creation de la trame de requete Modbus
-			lengthTrameToSend = createRequestTrame(requestType, trameToSend, &typeVal);
+			// Get data CH2
 
-			// Envoie de la requete Modbus sur le supporte de communication et reception de la trame reponse
-			if (lengthTrameToSend)
-				codret = sendAndReceiveSerialPort(hPort, INFINITE, trameToSend, lengthTrameToSend, trameReceived, &lengthTrameReceived);
+			// Print data CH2
 
-			// Decodage de la trame reçue
-			if (codret != ERRORCOMM_NOERROR || lengthTrameReceived == 0)
-				printState(codret);
-			else
-			{
-			codret = parseModbusResponse(trameReceived, lengthTrameReceived, requestType, typeVal);
-				if (codret != ERRORCOMM_NOERROR)
-					printState(codret);
-			}
-			*/
+			// Get data CH3
+
+			// Print data CH3
 
 			printf("\033[1ACode -> %5d.\n", i);
 			i++;
@@ -66,13 +61,74 @@ void E2704_main(HANDLE hPort)
 		if (kbhit())
 		{
 			char key = getch();
-			if (key == 'q')
-				break;
+			if (key == 'q') break;
 		}
 
 		// Wait 10ms to avoid over speed processor
 		Sleep(10);
 	}
+}
+
+void E2704_ask_service(E2704_RegulationMode *regulation_mode, short *consigne)
+{
+	printf("Type de regulation? 0 (automatic) / 1 (manual)\n");
+	while (1)
+	{
+		scanf("%d", regulation_mode);
+
+		// Check consigne
+		if (*regulation_mode == E2704_MODE_AUTO)
+		{
+			printf("Consigne de puissance : ");
+			scanf("%d", consigne);
+			break;
+		}
+		else if (*regulation_mode == E2704_MODE_MANUAL)
+		{
+			printf("Consigne de temperature : ");
+			scanf("%d", consigne);
+			break;
+		}
+		else
+			puts("Invalid mode");
+	}
+}
+
+void E2704_set_regulation_mode(HANDLE hPort, E2704_RegulationMode mode)
+{
+	TypeRequest requestType = REQUEST_WRITE;
+	TypeVal typeVal = NO_TYPE;
+
+	/*
+	char trameToSend[100];
+	int lengthTrameToSend = 0;
+	char trameReceived[100];
+	int lengthTrameReceived = 99;
+	memset(trameReceived, '\0', sizeof(trameReceived));
+
+	ErrorComm codret = ERRORCOMM_ERROR;
+
+	// Creation de la trame de requete Modbus
+	lengthTrameToSend = createRequestTrame(requestType, trameToSend, &typeVal);
+
+	// Envoie de la requete Modbus sur le supporte de communication et reception de la trame reponse
+	if (lengthTrameToSend)
+		codret = sendAndReceiveSerialPort(hPort, INFINITE, trameToSend, lengthTrameToSend, trameReceived, &lengthTrameReceived);
+
+	// Decodage de la trame reçue
+	if (codret != ERRORCOMM_NOERROR || lengthTrameReceived == 0)
+		printState(codret);
+	else
+	{
+		codret = parseModbusResponse(trameReceived, lengthTrameReceived, requestType, typeVal);
+		if (codret != ERRORCOMM_NOERROR)
+			printState(codret);
+	}
+	*/
+}
+
+void E2704_set_consigne(HANDLE hPort, E2704_RegulationMode mode, short consigne){
+
 }
 
 void E2704_debug(HANDLE hPort)
@@ -295,36 +351,37 @@ ErrorComm parseModbusResponse(char *i_trameReceive, int i_lengthTrameReceived, T
 
 void printState(ErrorComm codret)
 {
-	switch (codret){
-		case ERRORCOMM_BCC:
-		{
-			printf("\nError BCC\n");
-			break;
-		}
+	switch (codret)
+	{
+	case ERRORCOMM_BCC:
+	{
+		printf("\nError BCC\n");
+		break;
+	}
 
-		case ERRORCOMM_TIMEOUT:
-		{
-			printf("\nError Timeout\n");
-			break;
-		}
+	case ERRORCOMM_TIMEOUT:
+	{
+		printf("\nError Timeout\n");
+		break;
+	}
 
-		case ERRORCOMM_NOERROR:
-		{
-			printf("\nNo error\n");
-			break;
-		}
+	case ERRORCOMM_NOERROR:
+	{
+		printf("\nNo error\n");
+		break;
+	}
 
-		case ERRORCOMM_ERROR:
-		{
-			printf("\nError\n");
-			break;
-		}
+	case ERRORCOMM_ERROR:
+	{
+		printf("\nError\n");
+		break;
+	}
 
-		default:
-		{
-			printf("\nError\n");
-			break;
-		}
+	default:
+	{
+		printf("\nError\n");
+		break;
+	}
 	}
 	return;
 }

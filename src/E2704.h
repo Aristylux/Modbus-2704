@@ -28,6 +28,12 @@ typedef enum typeval
     NO_TYPE
 } TypeVal;
 
+typedef enum E2704_regulationMode
+{
+    E2704_MODE_AUTO = 0,
+    E2704_MODE_MANUAL
+} E2704_RegulationMode;
+
 // E2704 API
 typedef struct E2704_config
 {
@@ -40,6 +46,21 @@ typedef struct E2704_config
 
 // Main program for E2704
 void E2704_main(HANDLE hPort);
+
+/*
+ * E2704_ask_service
+ * ask to user in wich mode the regulator is needed
+ * return:
+ *     * regulation mode , 0 (Automatic) / 1 (Manual)
+ *     * consigne:  
+ *              - value of the puissance (for automatic)
+ *              - value of temperature (for manual)
+ */
+void E2704_ask_service(E2704_RegulationMode *regulation_mode, short *consigne);
+
+void E2704_set_regulation_mode(HANDLE hPort, E2704_RegulationMode mode);
+
+void E2704_set_consigne(HANDLE hPort, E2704_RegulationMode mode, short consigne);
 
 // Debug, like TP3
 void E2704_debug(HANDLE hPort);
