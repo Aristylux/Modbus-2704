@@ -11,7 +11,7 @@ int GlobaleAdresseRegulatorModbus = 1;
 
 void E2704_main(HANDLE hPort)
 {
-	E2704_RegulationMode mode = 0;
+	E2704_RegulationMode mode = E2704_MODE_MANUAL;
 	short consigne;
 
 	// Ask user modes & consigne
@@ -61,7 +61,8 @@ void E2704_main(HANDLE hPort)
 		if (kbhit())
 		{
 			char key = getch();
-			if (key == 'q') break;
+			if (key == 'q')
+				break;
 		}
 
 		// Wait 10ms to avoid over speed processor
@@ -71,35 +72,50 @@ void E2704_main(HANDLE hPort)
 
 void E2704_ask_service(E2704_RegulationMode *regulation_mode, short *consigne)
 {
+	char buffer[10];
+	short input;
+
 	printf("Type de regulation? 0 (automatic) / 1 (manual)\n");
 	while (1)
 	{
-		scanf("%d", regulation_mode);
-
+		fgets(buffer, sizeof(buffer), stdin);
+		sscanf(buffer, "%d", &input);
+		
 		// Check consigne
-		if (*regulation_mode == E2704_MODE_AUTO)
+		if (input == E2704_MODE_AUTO)
 		{
 			printf("Consigne de puissance : ");
-			scanf("%d", consigne);
+			fgets(buffer, sizeof(buffer), stdin);
+			sscanf(buffer, "%d", consigne);
 			break;
 		}
-		else if (*regulation_mode == E2704_MODE_MANUAL)
+		else if (input == E2704_MODE_MANUAL)
 		{
 			printf("Consigne de temperature : ");
-			scanf("%d", consigne);
+			fgets(buffer, sizeof(buffer), stdin);
+			sscanf(buffer, "%d", consigne);
 			break;
 		}
 		else
 			puts("Invalid mode");
 	}
+	*regulation_mode = input;
 }
 
 void E2704_set_regulation_mode(HANDLE hPort, E2704_RegulationMode mode)
 {
-	TypeRequest requestType = REQUEST_WRITE;
-	TypeVal typeVal = NO_TYPE;
+	E2704_write(hPort, (short)mode, 5);
+}
 
-	/*
+void E2704_set_consigne(HANDLE hPort, E2704_RegulationMode mode, short consigne)
+{
+	if(mode == E2704_MODE_AUTO)
+		E2704_write(hPort, consigne, 1);
+	else if (mode = E2704_MODE_MANUAL)
+		E2704_write(hPort, consigne, 2);
+}
+
+void E2704_write(HANDLE hPort, short data, int address){
 	char trameToSend[100];
 	int lengthTrameToSend = 0;
 	char trameReceived[100];
@@ -109,26 +125,29 @@ void E2704_set_regulation_mode(HANDLE hPort, E2704_RegulationMode mode)
 	ErrorComm codret = ERRORCOMM_ERROR;
 
 	// Creation de la trame de requete Modbus
-	lengthTrameToSend = createRequestTrame(requestType, trameToSend, &typeVal);
+	lengthTrameToSend = E2704_createRequestTrame(REQUEST_WRITE, trameToSend, data, address);
 
+	printTrame("Send", trameToSend, lengthTrameToSend);
 	// Envoie de la requete Modbus sur le supporte de communication et reception de la trame reponse
 	if (lengthTrameToSend)
 		codret = sendAndReceiveSerialPort(hPort, INFINITE, trameToSend, lengthTrameToSend, trameReceived, &lengthTrameReceived);
 
 	// Decodage de la trame reçue
-	if (codret != ERRORCOMM_NOERROR || lengthTrameReceived == 0)
-		printState(codret);
-	else
-	{
-		codret = parseModbusResponse(trameReceived, lengthTrameReceived, requestType, typeVal);
-		if (codret != ERRORCOMM_NOERROR)
-			printState(codret);
-	}
-	*/
+	if (codret != ERRORCOMM_NOERROR || lengthTrameReceived == 0) printState(codret);
 }
 
-void E2704_set_consigne(HANDLE hPort, E2704_RegulationMode mode, short consigne){
+int E2704_createRequestTrame(TypeRequest i_requestType, char *i_trameSend, short value, int address)
+{
+	int address_slave = 1; // 1 car liason serie (il n'y en a qu'un seul)
 
+	int lengthTrameSend = 0;
+
+	if (i_requestType == REQUEST_READ)
+		lengthTrameSend = makeTrameLecModBus(address_slave, MODBUS_FUNCTION_READ_NWORDS, address, 1, i_trameSend, INTEL);
+	else if (i_requestType == REQUEST_WRITE)
+		lengthTrameSend = makeTrameEcrModBusFromShort(address_slave, MODBUS_FUNCTION_WRITE_WORD, address, value, i_trameSend, INTEL);
+
+	return lengthTrameSend;
 }
 
 void E2704_debug(HANDLE hPort)
@@ -388,7 +407,7 @@ void printState(ErrorComm codret)
 
 void printTrame(char *type, char trame[100], int lengthTrame)
 {
-	printf("\n %s trame (length = %i):", type, lengthTrame);
+	printf("%s trame (length = %i):", type, lengthTrame);
 	for (int i = 0; i < lengthTrame; i++)
 		printf("%02X ", ((unsigned char)trame[i]));
 	printf("\n");
