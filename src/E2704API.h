@@ -44,6 +44,7 @@ typedef struct E2704_parameter_list
     int num_params;
     int len_param;
     int len_row_ch;
+    char *blank;
 } t_E2704_parameter_list;
 
 

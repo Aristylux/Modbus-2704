@@ -44,6 +44,9 @@ void E2704_main(HANDLE hPort)
 	printParameterRow(paramList);
     printEnd(paramList, CH1);
 
+	printChannel(paramList, CH1);
+	clearChannel(paramList, CH1);
+
 	int i = 0;
 	clock_t begin, end;
 	begin = clock();
@@ -51,13 +54,13 @@ void E2704_main(HANDLE hPort)
 	{
 		// Get new tick
 		end = clock();
-
 		// If total tick > 1s, update & execute
 		if ((end - begin) >= 1000)
 		{
 			begin = end;
 
 			// Get & print data for each channel
+			clearChannel(paramList, CH1);
 			printChannel(paramList, CH1);
 
 			//printChannel(paramList, CH2);
