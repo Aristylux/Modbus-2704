@@ -152,17 +152,17 @@ void printParameterRow(t_E2704_parameter_list *paramList)
     t_E2704_parameter *params = paramList->parameterList;
     // int len = maxCharRow(params);
 
-    printLine(paramList->len_param + 2, 0, "┌");
-    printf("│ Parameters\n");
-    printLine(paramList->len_param + 2, 0, "├");
+    printLine(paramList->len_param + 2, 0, CORNER_T_L);
+    printf("%c Parameters\n", LINE_H);
+    printLine(paramList->len_param + 2, 0, LINE_V_R);
 
     while (params != NULL)
     {
-        printf("│ %s\n", params->name);
+        printf("%c %s\n", LINE_H, params->name);
         params = params->next;
     }
 
-    printLine(paramList->len_param + 2, 0, "└");
+    printLine(paramList->len_param + 2, 0, CORNER_B_L);
 }
 
 /**
@@ -180,16 +180,16 @@ void printChannel(t_E2704_parameter_list *paramList, E2704_Channel channel)
 
     int offset = paramList->len_param + 3 + ((channel - 1) * 8);
 
-    printLine(paramList->len_row_ch + 2, offset, "┬");
-    printf("\033[%dC│ CH%d\n", offset, channel);
-    printLine(paramList->len_row_ch + 2, offset, "┼");
+    printLine(paramList->len_row_ch + 2, offset, LINE_H_D);
+    printf("\033[%dC%c CH%d\n", offset, LINE_H, channel);
+    printLine(paramList->len_row_ch + 2, offset, LINE_V_H);
 
     while (params != NULL)
     {
-        printf("\033[%dC│ %5d\n", offset, params->value);
+        printf("\033[%dC%c %5d\n", offset, LINE_H, params->value);
         params = params->next;
     }
-    printLine(paramList->len_row_ch + 2, offset, "┴");
+    printLine(paramList->len_row_ch + 2, offset, LINE_H_U);
 }
 
 /**
@@ -206,16 +206,18 @@ void clearChannel(t_E2704_parameter_list *paramList, E2704_Channel channel){
     int offset = paramList->len_param + 3 + ((channel - 1) * 8);
 
     char *blank = (char *)malloc(paramList->len_row_ch * sizeof(char));
-    memset(blank, ' ', paramList->len_row_ch);
+    memset(blank, 'x', paramList->len_row_ch);
 
-    printLine(paramList->len_row_ch + 2, offset, "┼");
+    printLine(paramList->len_row_ch + 2, offset, LINE_V_H);
 
     while (params != NULL)
     {
-        printf("\033[%dC│ %s\n", offset, blank);
+        printf("\033[%dC%c %s\n", offset, LINE_H, blank);
         params = params->next;
     }
-    printLine(paramList->len_row_ch + 2, offset, "┴");
+    free(blank);
+    blank = NULL;
+    printLine(paramList->len_row_ch + 2, offset, LINE_H_U);
 }
 
 /**
@@ -225,13 +227,13 @@ void clearChannel(t_E2704_parameter_list *paramList, E2704_Channel channel){
  * @param offset offset from the right edge
  * @param firstChar first char of the ligne
  */
-void printLine(const int len, const int offset, char *firstChar){
+void printLine(const int len, const int offset, char firstChar){
     if (offset != 0)
-        printf("\033[%dC%s", offset, firstChar);
+        printf("\033[%dC%c", offset, firstChar);
     else
-        printf("%s", firstChar);
+        printf("%c", firstChar);
     for (int i = 0; i < len; i++)
-        printf("─");
+        printf("%c", LINE_V);
     printf("\n");
 }
 
@@ -249,14 +251,14 @@ void printEnd(t_E2704_parameter_list *paramList, E2704_Channel lastChannel)
 
     int offset = paramList->len_param + 3 + (lastChannel * 8);
 
-    printf("\033[%dC┐\n", offset);
-    printf("\033[%dC│\n", offset);
-    printf("\033[%dC┤\n", offset);
+    printf("\033[%dC%c\n", offset, CORNER_T_R);
+    printf("\033[%dC%c\n", offset, LINE_H);
+    printf("\033[%dC%c\n", offset, LINE_V_L);
 
     while (params != NULL)
     {
-        printf("\033[%dC│\n", offset);
+        printf("\033[%dC%c\n", offset, LINE_H);
         params = params->next;
     }
-    printf("\033[%dC┘\n", offset);
+    printf("\033[%dC%c\n", offset, CORNER_B_R);
 }

@@ -32,12 +32,17 @@ void E2704_main(HANDLE hPort)
 
 	addParameter(paramList, "Measured Value (PV)", 1);
     addParameter(paramList, "Set Point (SP)", 5);
+	addParameter(paramList, "Regulation Mode", 273);
+    addParameter(paramList, "OutPut Power", 3);
+    addParameter(paramList, "P", 351);
+    addParameter(paramList, "I", 352);
+    addParameter(paramList, "D", 353);
 
 	printList(paramList);
 
-	// Print table
-
-	// Print legend
+	// Print table & legend
+	printParameterRow(paramList);
+    printEnd(paramList, CH1);
 
 	int i = 0;
 	clock_t begin, end;
@@ -53,7 +58,11 @@ void E2704_main(HANDLE hPort)
 			begin = end;
 
 			// Get & print data for each channel
+			printChannel(paramList, CH1);
 
+			//printChannel(paramList, CH2);
+
+			//printChannel(paramList, CH3);
 
 			printf("\033[1ACode -> %5d.\n", i);
 			i++;
@@ -70,6 +79,9 @@ void E2704_main(HANDLE hPort)
 		// Wait 10ms to avoid over speed processor
 		Sleep(10);
 	}
+
+	freeList(paramList);
+
 }
 
 void E2704_ask_service(E2704_RegulationMode *regulation_mode, short *consigne)
