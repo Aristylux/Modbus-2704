@@ -64,6 +64,7 @@ ErrorComm getValue(HANDLE hPort, t_E2704_parameter_list *paramList, E2704_Channe
 
 void printParameterRow(t_E2704_parameter_list *paramList);
 void printChannel(t_E2704_parameter_list *paramList, E2704_Channel channel);
+void printValueChannel(t_E2704_parameter_list *paramList, t_E2704_parameter *parameter, E2704_Channel channel);
 void clearChannel(t_E2704_parameter_list *paramList, E2704_Channel channel);
 void printLine(const int len, const int offset, char firstChar);
 void printEnd(t_E2704_parameter_list *paramList, E2704_Channel lastChannel);

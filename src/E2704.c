@@ -26,7 +26,7 @@ void E2704_main(HANDLE hPort)
 	short val = E2704_read(hPort, 2);
 	printf("val: %d\n", val);
 
-	printf("\n\tPress 'q' to quit program.\n\tExecute .\\Mod_E2704 -h for help.\n\n\n");
+	printf("\n\tPress 'q' to quit program.\n\tExecute .\\Mod_E2704 -h for help.\n\n");
 
 	t_E2704_parameter_list *paramList = initParameter();
 
@@ -38,13 +38,13 @@ void E2704_main(HANDLE hPort)
     addParameter(paramList, "I", 352);
     addParameter(paramList, "D", 353);
 
-	printList(paramList);
-
 	// Print table & legend
 	printParameterRow(paramList);
-    printEnd(paramList, CH1);
+    printEnd(paramList, CH3);
 
 	printChannel(paramList, CH1);
+	printChannel(paramList, CH2);
+	printChannel(paramList, CH3);
 
 	clock_t begin, end;
 	begin = clock();
@@ -59,11 +59,8 @@ void E2704_main(HANDLE hPort)
 
 			// Get & print data for each channel
 			if(getValue(hPort, paramList, CH1) == ERRORCOMM_INTERRUPT) break;
-			printChannel(paramList, CH1);
-
-			//printChannel(paramList, CH2);
-
-			//printChannel(paramList, CH3);
+			if(getValue(hPort, paramList, CH2) == ERRORCOMM_INTERRUPT) break;
+			if(getValue(hPort, paramList, CH3) == ERRORCOMM_INTERRUPT) break;
 		}
 
 		// Keybord interruption

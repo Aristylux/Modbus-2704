@@ -140,8 +140,14 @@ ErrorComm getValue(HANDLE hPort, t_E2704_parameter_list *paramList, E2704_Channe
     {
         // Ask & Retrive info
         //int value = rand() % 100; // simulation
-        current->value = E2704_read(hPort, current->address);
+        current->value = E2704_read(hPort, current->address + offsetAddress);
+
+        // If the return is a negative ERRORCOMM_INTERRUPT, exit
         if(current->value == -ERRORCOMM_INTERRUPT) return ERRORCOMM_INTERRUPT;
+
+        // Else, clear value and write new value.
+        printValueChannel(paramList, current, channel);
+
         t_E2704_parameter *next = current->next;
         current = next;
     }
@@ -181,7 +187,7 @@ void printParameterRow(t_E2704_parameter_list *paramList)
  */
 void printChannel(t_E2704_parameter_list *paramList, E2704_Channel channel)
 {
-    clearChannel(paramList, channel);
+    //clearChannel(paramList, channel);
     t_E2704_parameter *params = paramList->parameterList;
 
     printf("\033[%dA", paramList->num_params + 4);
@@ -201,7 +207,40 @@ void printChannel(t_E2704_parameter_list *paramList, E2704_Channel channel)
 }
 
 /**
- * @brief clear value writhen for a channel
+ * @brief print a specific value from a parameter in a channel
+ * 
+ * @param paramList list
+ * @param parameter paramater to print
+ * @param channel channel
+ */
+void printValueChannel(t_E2704_parameter_list *paramList, t_E2704_parameter *parameter, E2704_Channel channel){    
+    t_E2704_parameter *params = paramList->parameterList;
+    
+    // Determine vertical position 
+    int parameter_pos = paramList->num_params;
+    while (params != NULL)
+    {
+        if(params->address == parameter->address) break;
+        parameter_pos --;
+        params = params->next;
+    }
+
+    int offset = paramList->len_param + 3 + ((channel - 1) * 8);
+
+    // Position cursor to the ligne
+    printf("\033[%dA", parameter_pos + 1);
+    // Clear
+    printf("\033[%dC%c %s", offset, LINE_H, paramList->blank);
+    // Return to the origin
+    printf("\033[%dD", offset + strlen(paramList->blank) + 2);
+    // Print
+    printf("\033[%dC%c %5d\n", offset, LINE_H, parameter->value);
+    // Reset position cursor
+    printf("\033[%dB", parameter_pos + 1);
+}
+
+/**
+ * @brief clear value writhen for a channel (not used)
  *
  * @param paramList list
  * @param channel selected channel
