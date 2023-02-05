@@ -13,6 +13,14 @@ t_E2704_parameter_list *initParameter(void){
     paramList->num_params = 0;
     paramList->len_param = 0;
     paramList->len_row_ch = 5;
+
+    char *blank = (char *)malloc((paramList->len_row_ch+1) * sizeof(char));
+    for (int i = 0; i < paramList->len_row_ch; i++)
+        blank[i] = ' ';
+    blank[paramList->len_row_ch] = '\0';
+
+    paramList->blank = blank;
+
     return paramList;
 }
 
@@ -109,6 +117,7 @@ void freeList(t_E2704_parameter_list *paramList)
         free(current);
         current = next;
     }
+    free(paramList->blank);
     paramList->num_params = 0;
     free(paramList);
     paramList = NULL;
@@ -173,7 +182,7 @@ void printParameterRow(t_E2704_parameter_list *paramList)
  */
 void printChannel(t_E2704_parameter_list *paramList, E2704_Channel channel)
 {
-    clearChannel(paramList, channel);
+    //clearChannel(paramList, channel);
     t_E2704_parameter *params = paramList->parameterList;
 
     printf("\033[%dA", paramList->num_params + 4);
@@ -205,18 +214,13 @@ void clearChannel(t_E2704_parameter_list *paramList, E2704_Channel channel){
 
     int offset = paramList->len_param + 3 + ((channel - 1) * 8);
 
-    char *blank = (char *)malloc(paramList->len_row_ch * sizeof(char));
-    memset(blank, 'x', paramList->len_row_ch);
-
     printLine(paramList->len_row_ch + 2, offset, LINE_V_H);
 
     while (params != NULL)
     {
-        printf("\033[%dC%c %s\n", offset, LINE_H, blank);
+        printf("\033[%dC%c %s\n", offset, LINE_H, paramList->blank);
         params = params->next;
     }
-    free(blank);
-    blank = NULL;
     printLine(paramList->len_row_ch + 2, offset, LINE_H_U);
 }
 
