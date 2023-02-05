@@ -6,6 +6,7 @@
 #include "debug.h"
 #include "Modbus.h"
 #include "E2704.h"
+#include "E2704API.h"
 
 int GlobaleAdresseRegulatorModbus = 1;
 
@@ -27,6 +28,13 @@ void E2704_main(HANDLE hPort)
 
 	printf("\n\tPress 'q' to quit program.\n\tExecute .\\Mod_E2704 -h for help.\n\n\n");
 
+	t_E2704_parameter_list *paramList = initParameter();
+
+	addParameter(paramList, "Measured Value (PV)", 1);
+    addParameter(paramList, "Set Point (SP)", 5);
+
+	printList(paramList);
+
 	// Print table
 
 	// Print legend
@@ -44,17 +52,8 @@ void E2704_main(HANDLE hPort)
 		{
 			begin = end;
 
-			// Get data CH1
+			// Get & print data for each channel
 
-			// Print data CH1
-
-			// Get data CH2
-
-			// Print data CH2
-
-			// Get data CH3
-
-			// Print data CH3
 
 			printf("\033[1ACode -> %5d.\n", i);
 			i++;
