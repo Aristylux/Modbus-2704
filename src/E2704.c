@@ -58,7 +58,7 @@ void E2704_main(HANDLE hPort)
 			begin = end;
 
 			// Get & print data for each channel
-			getValue(hPort, paramList, CH1);
+			if(getValue(hPort, paramList, CH1) == ERRORCOMM_INTERRUPT) break;
 			printChannel(paramList, CH1);
 
 			//printChannel(paramList, CH2);
@@ -79,7 +79,6 @@ void E2704_main(HANDLE hPort)
 	}
 
 	freeList(paramList);
-
 }
 
 /**

@@ -130,7 +130,7 @@ void freeList(t_E2704_parameter_list *paramList)
  * @param paramList 
  * @param channel 
  */
-void getValue(HANDLE hPort, t_E2704_parameter_list *paramList, E2704_Channel channel){
+ErrorComm getValue(HANDLE hPort, t_E2704_parameter_list *paramList, E2704_Channel channel){
     static short value = 0;
     // CH1: off=0, CH2: off=1024, CH3: off=2048
     int offsetAddress = (channel - 1) * 1024;
@@ -141,7 +141,7 @@ void getValue(HANDLE hPort, t_E2704_parameter_list *paramList, E2704_Channel cha
         // Ask & Retrive info
         //int value = rand() % 100; // simulation
         current->value = E2704_read(hPort, current->address);
-
+        if(current->value == -ERRORCOMM_INTERRUPT) return ERRORCOMM_INTERRUPT;
         t_E2704_parameter *next = current->next;
         current = next;
     }
