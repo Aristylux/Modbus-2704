@@ -8,7 +8,7 @@
 
 
 #include "SerialPort.h"
-
+#include <conio.h> 
 
 void GetPortName(int idPort, char* portName)
 {
@@ -184,6 +184,7 @@ ErrorComm sendSerialPort( HANDLE hPort, int timeOut,const char *i_pDdonnees, int
 // Le nombre d'octets lus est renvoye
 ErrorComm recvSerialPort( HANDLE hPort, int timeOut, char *i_pDonnees, int *i_nbOctetsLus)
 {	
+	static BOOL interrup = FALSE;
 	ErrorComm code_erreur = ERRORCOMM_NOERROR;
 	DWORD nbBytes = 0;
 	char trame[500];
@@ -212,6 +213,22 @@ ErrorComm recvSerialPort( HANDLE hPort, int timeOut, char *i_pDonnees, int *i_nb
 		// En asynchrone, readfile retourne FAUX et ERROR_IO_PENDING	
 		while (!stopRead && code_erreur == ERRORCOMM_NOERROR)
 		{
+			// If there is an interruption for exit transmition, exit
+			if(interrup == TRUE) {
+				code_erreur = ERRORCOMM_INTERRUPT;
+				break;
+			}
+			// If a keypress is active, active interruption
+			if (kbhit())
+			{
+				char key = getch();
+				if (key == 'q'){
+					interrup = TRUE;
+					code_erreur = ERRORCOMM_INTERRUPT;
+					break;
+				}
+			}
+
             int nbBytesToRead = MAX_CAR_TRAME - nbCarRead;
             int readfileStatus = ReadFile(hPort,&trame + nbCarRead, nbBytesToRead, &nbBytes, &lpOverRead);
 

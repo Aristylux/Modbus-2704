@@ -4,88 +4,59 @@
 
 #include "debug.h"
 #include "E2704.h"
-#include "Modbus.h"
 
-int main(void)
+int main(int argc, char **argv)
 {
-    BOOL connexionOk = FALSE;
+    BOOL debugEnabled = FALSE;
+
+    // -- Welcome message --
+    printf("****************************************************************************\n");
+    printf("*                         PROTOCOLE MODBUS E2704                           *\n");
+    printf("****************************************************************************\n");
+
+    // -- Check arguments --
+    switch (checkArguments(argc, argv))
+    {
+    case MODE_MAIN:
+        break;
+    case MODE_HELP:
+        printHelp();
+        return EXIT_SUCCESS;
+    case MODE_ERROR_IA:
+        puts("Invalid Arguments");
+        return EXIT_FAILURE;
+    case MODE_ERROR_TMA:
+        puts("Too many arguments");
+        return EXIT_FAILURE;
+    case MODE_DEBUG:
+        debugEnabled = TRUE;
+    }
+    
+    // -- Connection --
+    printDebug("main", "open modbus connection");
     HANDLE handleSerialPort = NULL;
 
-    printf("****************************************************************************\n");
-    printf("*                             PROTOCOLE MODBUS                             *\n");
-    printf("****************************************************************************\n");
-
-    //*******************************************************************************
     // Creation et ouverture du support de communication
     handleSerialPort = connectionSerialPort();
-    //*******************************************************************************
 
+    // If the connection is not established, exit
     if (handleSerialPort == NULL)
     {
-        printf("Echec de connexion.");
-        return 1;
+        puts("Echec de connexion.");
+        return EXIT_FAILURE;
     }
 
-    TypeRequest requestType = NO_REQUEST;
-    TypeVal typeVal = NO_TYPE;
+    // -- Main program --
+    // If debug mode enabled, go to verbal program
+    // If debug mode disabled, gt to E2704 visualisator
+    if (debugEnabled == FALSE)
+        E2704_main(handleSerialPort);
+    else
+        E2704_debug(handleSerialPort);
 
-    while (requestType != REQUEST_QUIT)
-    {
-        char trameToSend[100];
-        int lengthTrameToSend = 0;
-        char trameReceived[100];
-        int lengthTrameReceived = 99;
-        memset(trameReceived, '\0', sizeof(trameReceived));
-
-        ErrorComm codret = ERRORCOMM_ERROR;
-
-        printf("\n****************************************************************************\n");
-        printf("\t1. Demande de lecture.\n");
-        printf("\t2. Demande d'ecriture.\n");
-        printf("\t3. Quitter.\n");
-        printf("Que souhaitez-vous faire?\n");
-        scanf("%d", &requestType);
-
-        //*******************************************************************************
-        // Creation de la trame de requete Modbus
-        if (requestType == REQUEST_READ || requestType == REQUEST_WRITE)
-            lengthTrameToSend = createRequestTrame(requestType, trameToSend, &typeVal);
-        else
-            continue;
-
-        printTrame("Send", trameToSend, lengthTrameToSend);
-
-        //*******************************************************************************
-        // Envoie de la requete Modbus sur le supporte de communication et reception de la trame reponse
-        if (lengthTrameToSend)
-        {
-            // A COMPLETER (fait)
-            printDebug("main", "set request modbus");
-            codret = sendAndReceiveSerialPort(handleSerialPort, INFINITE, trameToSend, lengthTrameToSend, trameReceived, &lengthTrameReceived);
-
-            printf("code: %d, lengthTrameReceived: %d", codret, lengthTrameReceived);
-        }
-
-        //*******************************************************************************
-        // Decodage de la trame reçue
-        if (codret != ERRORCOMM_NOERROR || lengthTrameReceived == 0) printState(codret);
-        else
-        {
-            printTrame("Receive", trameReceived, lengthTrameReceived);
-
-            codret = parseModbusResponse(trameReceived, lengthTrameReceived, requestType, typeVal);
-            if (codret != ERRORCOMM_NOERROR) printState(codret);
-            //*******************************************************************************
-        }
-    }
-
-    //*******************************************************************************
     // Fermeture du support de communication
-
-    // A COMPLETER (fait)
     printDebug("main", "close modbus connection");
     terminateSerialPort(handleSerialPort);
 
-    //*******************************************************************************
-    return 0;
+    return EXIT_SUCCESS;
 }

@@ -24,7 +24,7 @@ typedef enum errorcomm
 	ERRORCOMM_IOPENDING,
 	ERRORCOMM_WAITOBJ, // erreur sur WaitForSingleObject
 	ERRORCOMM_INCONNU, // Commande inconnue
-
+	ERRORCOMM_INTERRUPT
 } ErrorComm;
 
 int checksum(char *s);
