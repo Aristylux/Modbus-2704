@@ -5,6 +5,8 @@
 #include <string.h>
 #include <stdlib.h>
 
+#include "E2704.h"
+
 #define CORNER_T_L  (char) 218  // Top left corner              (┌)
 #define CORNER_T_R  (char) 191  // Top right corner             (┐)
 #define CORNER_B_L  (char) 192  // Bottom left corner           (└)
@@ -55,7 +57,7 @@ t_E2704_parameter *newParameter(char *paramName, int address);
 void addParameter(t_E2704_parameter_list *paramList, char *paramName, int address);
 void printList(t_E2704_parameter_list *paramList);
 void freeList(t_E2704_parameter_list *paramList);
-void getValue(t_E2704_parameter_list *paramList, E2704_Channel channel);
+void getValue(HANDLE hPort, t_E2704_parameter_list *paramList, E2704_Channel channel);
 
 // -- Print --
 

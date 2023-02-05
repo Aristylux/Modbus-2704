@@ -13,7 +13,7 @@ int GlobaleAdresseRegulatorModbus = 1;
 void E2704_main(HANDLE hPort)
 {
 	E2704_RegulationMode mode = E2704_MODE_MANUAL;
-	short consigne;
+	short consigne = 10;
 
 	// Ask user modes & consigne
 	E2704_ask_service(&mode, &consigne);
@@ -45,9 +45,7 @@ void E2704_main(HANDLE hPort)
     printEnd(paramList, CH1);
 
 	printChannel(paramList, CH1);
-	clearChannel(paramList, CH1);
 
-	int i = 0;
 	clock_t begin, end;
 	begin = clock();
 	while (1)
@@ -60,15 +58,12 @@ void E2704_main(HANDLE hPort)
 			begin = end;
 
 			// Get & print data for each channel
-			clearChannel(paramList, CH1);
+			getValue(hPort, paramList, CH1);
 			printChannel(paramList, CH1);
 
 			//printChannel(paramList, CH2);
 
 			//printChannel(paramList, CH3);
-
-			printf("\033[1ACode -> %5d.\n", i);
-			i++;
 		}
 
 		// Keybord interruption
@@ -87,6 +82,14 @@ void E2704_main(HANDLE hPort)
 
 }
 
+/**
+ * @brief Ask to user in wich mode the regulator is needed
+ * 
+ * @param regulation_mode return: 0 (Automatic) / 1 (Manual)
+ * @param consigne return:
+ * 				- value of the puissance (for automatic)
+ *              - value of temperature (for manual)
+ */
 void E2704_ask_service(E2704_RegulationMode *regulation_mode, short *consigne)
 {
 	char buffer[10];
@@ -143,7 +146,7 @@ ErrorComm E2704_sendRequest(HANDLE hPort, TypeRequest requestType, short data, i
 	// Creation de la trame de requete Modbus
 	lengthTrameToSend = E2704_createRequestTrame(requestType, trameToSend, data, address);
 
-	printTrame("Send", trameToSend, lengthTrameToSend);
+	//printTrame("Send", trameToSend, lengthTrameToSend);
 	// Envoie de la requete Modbus sur le supporte de communication et reception de la trame reponse
 	if (lengthTrameToSend)
 		codret = sendAndReceiveSerialPort(hPort, INFINITE, trameToSend, lengthTrameToSend, trameOut, lenTrameOut);
@@ -166,7 +169,7 @@ short E2704_read(HANDLE hPort, int _address){
 	memset(trameReceived, '\0', sizeof(trameReceived));
 
 	ErrorComm codret = E2704_sendRequest(hPort, REQUEST_READ, 0, _address, trameReceived, &lengthTrameReceived);
-	if (codret != ERRORCOMM_NOERROR) printState(codret);
+	if (codret != ERRORCOMM_NOERROR) /*printState(codret);*/ return codret * -1;
 
 	// Decodage de la trame reçue
 	int address = 1;
@@ -174,13 +177,12 @@ short E2704_read(HANDLE hPort, int _address){
 	int nbValue;
 	int codeFunction;
 
-	if (codret != ERRORCOMM_NOERROR || lengthTrameReceived == 0) printState(codret);
+	if (codret != ERRORCOMM_NOERROR || lengthTrameReceived == 0) /*printState(codret)*/ return codret * -1;
 	else {
-		printTrame("Receive", trameReceived, lengthTrameReceived);
+		//printTrame("Receive", trameReceived, lengthTrameReceived);
 		//codret = parseModbusResponse(trameReceived, lengthTrameReceived, REQUEST_READ, TYPE_SHORT);
 		codret = parseTrameModBus(trameReceived, lengthTrameReceived, valuec, &nbValue, &address, &codeFunction, INTEL);
-		if (codret != ERRORCOMM_NOERROR)
-			printState(codret);
+		if (codret != ERRORCOMM_NOERROR) /*printState(codret);*/ return codret * -1;
 	}
 	return ModBusShortAsciiToIeee(valuec, INTEL);
 }

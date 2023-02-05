@@ -47,25 +47,11 @@ typedef struct E2704_config
 // Main program for E2704
 void E2704_main(HANDLE hPort);
 
-/*
- * E2704_ask_service
- * ask to user in wich mode the regulator is needed
- * return:
- *     * regulation mode , 0 (Automatic) / 1 (Manual)
- *     * consigne:  
- *              - value of the puissance (for automatic)
- *              - value of temperature (for manual)
- */
 void E2704_ask_service(E2704_RegulationMode *regulation_mode, short *consigne);
-
 void E2704_set_regulation_mode(HANDLE hPort, E2704_RegulationMode mode);
-
 void E2704_set_consigne(HANDLE hPort, E2704_RegulationMode mode, short consigne);
-
 void E2704_write(HANDLE hPort, short data, int address);
-
 short E2704_read(HANDLE hPort, int _address);
-
 int E2704_createRequestTrame(TypeRequest i_requestType, char *i_trameSend, short value, int address);
 
 // Debug, like TP3
