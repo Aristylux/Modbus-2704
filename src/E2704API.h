@@ -14,6 +14,7 @@
 #define F_CONFIG_SERIAL     (char*) "config_serial.json"
 #define F_CONFIG_PARAM_R    (char*) "config_parameter_to_read.json"
 #define F_CONFIG_PARAM_W    (char*) "config_parameter_to_write.json"
+#define F_CONFIG_CONSIGNE   (char*) "config_consigne.json"
 
 // Characters for box
 
@@ -73,6 +74,7 @@ void freeList(t_E2704_parameter_list *paramList);
 
 ErrorComm E2704_getValue(HANDLE hPort, t_E2704_parameter_list *paramList, E2704_Channel channel);
 void E2704_write_consigne(HANDLE hPort, t_E2704_parameter_list *paramList, char *paramName, E2704_Channel channel);
+void E2704_setConsigne(HANDLE hPort, t_E2704_parameter_list *paramList, E2704_RegulationMode mode, short consigne, E2704_Channel channel);
 void E2704_setParametersRead(t_E2704_parameter_list *paramList);
 void E2704_setParametersWrite(t_E2704_parameter_list *paramList);
 int E2704_setServiceUser(HANDLE hPort, t_E2704_parameter_list *paramList);
@@ -90,7 +92,9 @@ void printEnd(t_E2704_parameter_list *paramList, E2704_Channel lastChannel);
 
 int config_file_exist(const char *configFileName);
 t_E2704_config E2704_getSerialPortConfig(const char *configFileName);
-void E2704_getParameterReadConfig(const char *configFileName, t_E2704_parameter_list *paramList);
+void E2704_getParameterConfig(const char *configFileName, t_E2704_parameter_list *paramList);
+int E2704_getConsigneCongig(HANDLE hPort, t_E2704_parameter_list *paramList, const char *configFileName);
 void removeChar(char * str, char charToRemmove);
+void removeCharStart(char * str, char charToRemmove);
 
 #endif

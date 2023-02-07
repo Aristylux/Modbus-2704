@@ -52,7 +52,7 @@ t_E2704_parameter *newParameter(char *paramName, int address)
  * @param paramName parameter name to put the value
  * @param value value of the parameter
  */
-void setParameterValue(t_E2704_parameter_list *paramList, char *paramName, short value){
+void setParameterValue(t_E2704_parameter_list *paramList, char *paramName, short value){   
     t_E2704_parameter *params = paramList->parameterList;
 
 	while (params != NULL)
@@ -117,7 +117,7 @@ void printList(t_E2704_parameter_list *paramList)
         return;
     while (current != NULL)
     {
-        printf("%s (%d)\n", current->name, current->address);
+        printf("%s\t(%d)\t(%d)\n", current->name, current->address, current->value);
         current = current->next;
     }
 }
@@ -185,7 +185,7 @@ ErrorComm E2704_getValue(HANDLE hPort, t_E2704_parameter_list *paramList, E2704_
  * @param channel selected channel
  */
 void E2704_write_consigne(HANDLE hPort, t_E2704_parameter_list *paramList, char *paramName, E2704_Channel channel){
-	t_E2704_parameter *params = paramList->parameterList;
+    t_E2704_parameter *params = paramList->parameterList;
 
 	int offsetAddress = (channel - 1) * 1024;
 
@@ -200,6 +200,32 @@ void E2704_write_consigne(HANDLE hPort, t_E2704_parameter_list *paramList, char 
 }
 
 /**
+ * @brief 
+ * 
+ * @param hPort handle port comm
+ * @param paramList list of parameter
+ * @param mode Auto or Manual
+ * @param consigne power or temperature 
+ * @param channel selected channel
+ */
+void E2704_setConsigne(HANDLE hPort, t_E2704_parameter_list *paramList, E2704_RegulationMode mode, short consigne, E2704_Channel channel){
+    setParameterValue(paramList, "Regulation Mode", (short) mode);
+	E2704_write_consigne(hPort, paramList, "Regulation Mode", channel);
+
+	if(mode == E2704_MODE_AUTO){
+        setParameterValue(paramList, "Target Set Point", consigne);
+        E2704_write_consigne(hPort, paramList, "Target Set Point", channel);
+        setParameterValue(paramList, "Output Power", 0);
+        E2704_write_consigne(hPort, paramList, "Output Power", channel);
+    } else if (mode = E2704_MODE_MANUAL) {
+        setParameterValue(paramList, "Output Power", consigne);
+        E2704_write_consigne(hPort, paramList, "Output Power", channel);
+        setParameterValue(paramList, "Target Set Point", 0);
+        E2704_write_consigne(hPort, paramList, "Target Set Point", channel);
+    }
+}
+
+/**
  * @brief set parameter automaticly or in read json file named
  *  "config_parameter_to_read.json" 
  * 
@@ -207,7 +233,7 @@ void E2704_write_consigne(HANDLE hPort, t_E2704_parameter_list *paramList, char 
  */
 void E2704_setParametersRead(t_E2704_parameter_list *paramList){
     if(config_file_exist(F_CONFIG_PARAM_R)){
-        E2704_getParameterReadConfig(F_CONFIG_PARAM_R, paramList);
+        E2704_getParameterConfig(F_CONFIG_PARAM_R, paramList);
     } else {
         addParameter(paramList, "Measured Value (PV)", 1);
         addParameter(paramList, "Set Point (SP)", 5);
@@ -227,7 +253,7 @@ void E2704_setParametersRead(t_E2704_parameter_list *paramList){
  */
 void E2704_setParametersWrite(t_E2704_parameter_list *paramList){
     if(config_file_exist(F_CONFIG_PARAM_W)){
-        E2704_getParameterReadConfig(F_CONFIG_PARAM_W, paramList);
+        E2704_getParameterConfig(F_CONFIG_PARAM_W, paramList);
     } else {
         addParameter(paramList, "Regulation Mode", 273);
         addParameter(paramList, "Target Set Point", 2);
@@ -243,6 +269,10 @@ void E2704_setParametersWrite(t_E2704_parameter_list *paramList){
  * @return int number of channels
  */
 int E2704_setServiceUser(HANDLE hPort, t_E2704_parameter_list *paramList){
+    if(config_file_exist(F_CONFIG_CONSIGNE)){
+        return E2704_getConsigneCongig(hPort, paramList, F_CONFIG_CONSIGNE);
+    } 
+
     E2704_RegulationMode mode = E2704_MODE_MANUAL;
 	short consigne = 10;
     int max_channel = 1;
@@ -258,16 +288,7 @@ int E2704_setServiceUser(HANDLE hPort, t_E2704_parameter_list *paramList){
 		E2704_ask_service(&mode, &consigne);
 		
 		// Send consigne & mode to E2704
-		setParameterValue(paramList, "Regulation Mode", (short) mode);
-		E2704_write_consigne(hPort, paramList, "Regulation Mode", channel);
-
-		setParameterValue(paramList, "Target Set Point", consigne);
-		setParameterValue(paramList, "Output Power", consigne);
-
-		if(mode == E2704_MODE_AUTO)
-			E2704_write_consigne(hPort, paramList, "Target Set Point", channel);
-		else if (mode = E2704_MODE_MANUAL)
-			E2704_write_consigne(hPort, paramList, "Output Power", channel);
+		E2704_setConsigne(hPort, paramList, mode, consigne, channel);
 	}
     return max_channel;
 }
@@ -495,7 +516,7 @@ t_E2704_config E2704_getSerialPortConfig(const char *configFileName){
  * @param configFileName file name of the config
  * @param paramList the list of parameters filled 
  */
-void E2704_getParameterReadConfig(const char *configFileName, t_E2704_parameter_list *paramList){
+void E2704_getParameterConfig(const char *configFileName, t_E2704_parameter_list *paramList){
     char line[100];
 
     printf("Read %s\n", configFileName);
@@ -509,21 +530,21 @@ void E2704_getParameterReadConfig(const char *configFileName, t_E2704_parameter_
     // Read file
     while (fgets(line, sizeof(line), file)) {
         // Remove parasit char
-        removeChar(line, ' ');
+        removeCharStart(line, ' ');
         removeChar(line, '\t');
 
         // Split & retieve values
         char *name = strtok(line, ":");
         char *address = strtok(NULL, "\n");
 
-        // If the variable name contain '"' like '"name"', remove tgis char, else stop this iteration
+        // If the variable name contain '"' like '"name"', remove this char, else stop this iteration
         if(strchr(name, '"') == NULL) continue;
         removeChar(name, '"');
 
         // Add end of line
-        if (address != NULL) {
-            address[strlen(address) - 1] = '\0';
-        }
+        //if (address != NULL) {
+        //    address[strlen(address) - 1] = '\0';
+        //}
         //printf("add: %s, %d\n", name, atoi(address));
         addParameter(paramList, name, atoi(address));
     }
@@ -532,22 +553,92 @@ void E2704_getParameterReadConfig(const char *configFileName, t_E2704_parameter_
     fclose(file);
 }
 
+int E2704_getConsigneCongig(HANDLE hPort, t_E2704_parameter_list *paramList, const char *configFileName){
+    char line[100];
+    int nbr_channel = 0;
+
+    printf("Read %s\n", configFileName);
+    // Open file
+    FILE *file = fopen(configFileName, "r");
+    if (file == NULL) {
+        perror("fopen");
+        return nbr_channel;
+    }
+
+    // Read file
+    while (fgets(line, sizeof(line), file)) {
+        // Remove parasit char
+        removeCharStart(line, ' ');
+        removeChar(line, '\t');
+
+        // Split & retieve values
+        char *channel = strtok(line, ":");
+        char *modeStr = strtok(NULL, ",");
+        char *consigne = strtok(NULL, "\n");
+
+        // If the variable name contain '"' like '"1"', remove this char, else stop this iteration
+        if(strchr(channel, '"') == NULL) continue;
+        removeChar(channel, '"');
+
+        // Add end of line
+        if (consigne != NULL) {
+            consigne[strlen(consigne) - 1] = '\0';
+        }
+
+        // Format consigne
+        removeChar(modeStr, '[');
+        removeChar(modeStr, ' ');
+        removeChar(consigne, ']');
+
+        int mode = (strcmp(modeStr, "\"AUTOMATIC\"") == 0) ? E2704_MODE_AUTO : E2704_MODE_MANUAL;
+        printf("Add: CH%d, '%s'\t, %d, consigne=%d\n", atoi(channel), modeStr, mode, atoi(consigne));
+
+        // Send consigne & mode to E2704
+		E2704_setConsigne(hPort, paramList, mode, atoi(consigne), atoi(channel));
+        nbr_channel++;
+    }
+
+    // Close & return
+    fclose(file);
+    return nbr_channel;
+}
+
 /**
  * @brief remove a specified char
  * 
  * @param str text
- * @param charToRemmove char to remove
+ * @param charToRemove char to remove
  */
-void removeChar(char * str, char charToRemmove){
+void removeChar(char * str, char charToRemove){
     int len = strlen(str);
     for(int i = 0; i < len; i++)
     {
-        if(str[i] == charToRemmove)
+        if(str[i] == charToRemove)
         {
             for(int j = i; j < len; j++)
                 str[j] = str[j+1];
             len--;
             i--;
         }
+    }
+}
+
+/**
+ * @brief remove first char from str
+ * 
+ * @param str text
+ * @param charToRemove char to remove
+ */
+void removeCharStart(char * str, char charToRemove){
+    int len = strlen(str);
+    for(int i = 0; i < len; i++)
+    {
+        if(str[i] == charToRemove)
+        {
+            for(int j = i; j < len; j++)
+                str[j] = str[j+1];
+            len--;
+            i--;
+        } else return;
     }
 }
