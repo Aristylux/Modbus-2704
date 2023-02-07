@@ -199,9 +199,15 @@ void E2704_write_consigne(HANDLE hPort, t_E2704_parameter_list *paramList, char 
 	}
 }
 
-void E2704_setParameters(t_E2704_parameter_list *paramList){
+/**
+ * @brief set parameter automaticly or in read json file named
+ *  "config_parameter_to_read.json" 
+ * 
+ * @param paramList the list filled of parameters 
+ */
+void E2704_setParametersRead(t_E2704_parameter_list *paramList){
     if(config_file_exist(F_CONFIG_PARAM_R)){
-        E2704_getParameterRead(F_CONFIG_PARAM_R, paramList);
+        E2704_getParameterReadConfig(F_CONFIG_PARAM_R, paramList);
     } else {
         addParameter(paramList, "Measured Value (PV)", 1);
         addParameter(paramList, "Set Point (SP)", 5);
@@ -213,6 +219,29 @@ void E2704_setParameters(t_E2704_parameter_list *paramList){
     }
 }
 
+/**
+ * @brief set parameter automaticly or in write json file named
+ *  "config_parameter_to_write.json" 
+ * 
+ * @param paramList the list filled of parameters 
+ */
+void E2704_setParametersWrite(t_E2704_parameter_list *paramList){
+    if(config_file_exist(F_CONFIG_PARAM_W)){
+        E2704_getParameterReadConfig(F_CONFIG_PARAM_W, paramList);
+    } else {
+        addParameter(paramList, "Regulation Mode", 273);
+        addParameter(paramList, "Target Set Point", 2);
+	    addParameter(paramList, "Output Power", 3);
+    }
+}
+
+/**
+ * @brief set the consignes and mode for each channel
+ * 
+ * @param hPort handle connection
+ * @param paramList list of parameter
+ * @return int number of channels
+ */
 int E2704_setServiceUser(HANDLE hPort, t_E2704_parameter_list *paramList){
     E2704_RegulationMode mode = E2704_MODE_MANUAL;
 	short consigne = 10;
@@ -223,10 +252,6 @@ int E2704_setServiceUser(HANDLE hPort, t_E2704_parameter_list *paramList){
 	printf("Nombre de channel: ");
 	fgets(buffer, sizeof(buffer), stdin);
 	sscanf(buffer, "%d", &max_channel);
-
-	addParameter(paramList, "Regulation Mode", 273);
-    addParameter(paramList, "Target Set Point", 2);
-	addParameter(paramList, "Output Power", 3);
 
 	for (int channel = 1; channel <= max_channel; channel++){
 		// Ask user modes & consigne
@@ -412,10 +437,17 @@ BOOL config_file_exist(const char *configFileName){
     return access(configFileName, F_OK) != -1;
 }
 
+/**
+ * @brief get value in json file for serial config
+ * 
+ * @param configFileName file name of the config
+ * @return t_E2704_config structure serial configuration
+ */
 t_E2704_config E2704_getSerialPortConfig(const char *configFileName){
     t_E2704_config config = {0};
     char line[100];
 
+    printf("Read %s\n", configFileName);
     // Open file
     FILE *file = fopen(configFileName, "r");
     if (file == NULL) {
@@ -456,9 +488,17 @@ t_E2704_config E2704_getSerialPortConfig(const char *configFileName){
     return config;
 }
 
-void E2704_getParameterRead(const char *configFileName, t_E2704_parameter_list *paramList){
+/**
+ * @brief get value in json file named:
+ * "config_parameter_to_read.json"
+ * 
+ * @param configFileName file name of the config
+ * @param paramList the list of parameters filled 
+ */
+void E2704_getParameterReadConfig(const char *configFileName, t_E2704_parameter_list *paramList){
     char line[100];
 
+    printf("Read %s\n", configFileName);
     // Open file
     FILE *file = fopen(configFileName, "r");
     if (file == NULL) {
@@ -476,14 +516,14 @@ void E2704_getParameterRead(const char *configFileName, t_E2704_parameter_list *
         char *name = strtok(line, ":");
         char *address = strtok(NULL, "\n");
 
+        // If the variable name contain '"' like '"name"', remove tgis char, else stop this iteration
         if(strchr(name, '"') == NULL) continue;
-
         removeChar(name, '"');
 
+        // Add end of line
         if (address != NULL) {
             address[strlen(address) - 1] = '\0';
         }
-
         //printf("add: %s, %d\n", name, atoi(address));
         addParameter(paramList, name, atoi(address));
     }

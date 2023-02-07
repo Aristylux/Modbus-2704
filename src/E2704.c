@@ -12,13 +12,14 @@ void E2704_main(HANDLE hPort)
 {
 	// ask & set command to send to the regulator
 	t_E2704_parameter_list *paramListWrite = initParameterList();
+	E2704_setParametersWrite(paramListWrite);
 	int max_channel = E2704_setServiceUser(hPort, paramListWrite);
-
-	printf("\n\tPress 'q' to quit program.\n\tExecute .\\Mod_E2704 -h for help.\n\n");
 
 	// Init & set parameters to read
 	t_E2704_parameter_list *paramListRead = initParameterList();
-	E2704_setParameters(paramListRead);
+	E2704_setParametersRead(paramListRead);
+
+	printf("\n\tPress 'q' to quit program.\n\tExecute .\\Mod_E2704 -h for help.\n\n");
 
 	// Print table & legend
 	printParameterRow(paramListRead);
