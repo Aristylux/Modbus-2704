@@ -214,34 +214,33 @@ int E2704_setServiceUser(HANDLE hPort, t_E2704_parameter_list *paramList){
 	short consigne = 10;
     int max_channel = 1;
     
-    // ask number of channels
+    // Ask number of channels
 	char buffer[3];
 	printf("Nombre de channel: ");
 	fgets(buffer, sizeof(buffer), stdin);
 	sscanf(buffer, "%d", &max_channel);
 
-	
-
-	addParameter(paramListWrite, "Regulation Mode", 273);
-    addParameter(paramListWrite, "Target Set Point", 2);
-	addParameter(paramListWrite, "Output Power", 3);
+	addParameter(paramList, "Regulation Mode", 273);
+    addParameter(paramList, "Target Set Point", 2);
+	addParameter(paramList, "Output Power", 3);
 
 	for (int channel = 1; channel <= max_channel; channel++){
 		// Ask user modes & consigne
 		E2704_ask_service(&mode, &consigne);
 		
 		// Send consigne & mode to E2704
-		setParameterValue(paramListWrite, "Regulation Mode", (short) mode);
-		E2704_write_consigne(hPort, paramListWrite, "Regulation Mode", channel);
+		setParameterValue(paramList, "Regulation Mode", (short) mode);
+		E2704_write_consigne(hPort, paramList, "Regulation Mode", channel);
 
-		setParameterValue(paramListWrite, "Target Set Point", consigne);
-		setParameterValue(paramListWrite, "Output Power", consigne);
+		setParameterValue(paramList, "Target Set Point", consigne);
+		setParameterValue(paramList, "Output Power", consigne);
 
 		if(mode == E2704_MODE_AUTO)
-			E2704_write_consigne(hPort, paramListWrite, "Target Set Point", channel);
+			E2704_write_consigne(hPort, paramList, "Target Set Point", channel);
 		else if (mode = E2704_MODE_MANUAL)
-			E2704_write_consigne(hPort, paramListWrite, "Output Power", channel);
+			E2704_write_consigne(hPort, paramList, "Output Power", channel);
 	}
+    return max_channel;
 }
 
 // -- Print --
@@ -401,12 +400,78 @@ void printEnd(t_E2704_parameter_list *paramList, E2704_Channel lastChannel)
  * @brief verify if a config file existe or not
  * 
  * @param configFileName file name
- * @return int 1 if exist, 0 not
+ * @return BOOL 1 if exist, 0 not
  */
-int config_file_exist(const char *configFileName){
+BOOL config_file_exist(const char *configFileName){
     // F_OK : check existence
     // R_OK : chech can read
     // W_OK : check can write
     // X_OK : check can execute
     return access(configFileName, F_OK) != -1;
+}
+
+t_E2704_config E2704_getSerialPortConfig(const char *configFileName){
+    t_E2704_config config = {0};
+    char line[100];
+
+    // Open file
+    FILE *file = fopen(configFileName, "r");
+    if (file == NULL) {
+        perror("fopen");
+        return config;
+    }
+
+    // Read file
+    while (fgets(line, sizeof(line), file)) {
+        // Remove parasit char
+        removeChar(line, ' ');
+        removeChar(line, '\t');
+        // Split & retieve values
+        char *key = strtok(line, ":");
+        char *value = strtok(NULL, "\n");
+    
+        if (value != NULL) {
+            value[strlen(value) - 1] = '\0';
+        }
+
+        // Get & set values
+        if (strcmp(key, "\"port\"") == 0) {
+            config.port = atoi(value);
+        } else if (strcmp(key, "\"baud\"") == 0) {
+            config.baud = atoi(value);
+        } else if (strcmp(key, "\"bits\"") == 0) {
+            config.bits = (short) atoi(value);
+        } else if (strcmp(key, "\"bit_parity\"") == 0) {
+            config.bit_parity = (short) atoi(value);
+        } else if (strcmp(key, "\"bit_stop\"") == 0) {
+            config.bit_stop = (short) atoi(value);
+        }
+    }
+
+    // Close & return
+    fclose(file);
+    return config;
+}
+
+/**
+ * @brief remove a specified char
+ * 
+ * @param str text
+ * @param charToRemmove char to remove
+ */
+void removeChar(char * str, char charToRemmove){
+    int i, j;
+    int len = strlen(str);
+    for(i=0; i<len; i++)
+    {
+        if(str[i] == charToRemmove)
+        {
+            for(j=i; j<len; j++)
+            {
+                str[j] = str[j+1];
+            }
+            len--;
+            i--;
+        }
+    }
 }

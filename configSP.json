@@ -1,0 +1,7 @@
+{   
+    "port": 2,
+	"baud": 9600,
+	"bits": 8,
+	"bit_parity": 0,
+	"bit_stop": 0
+}

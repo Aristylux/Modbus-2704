@@ -10,59 +10,25 @@
 
 void E2704_main(HANDLE hPort)
 {
-	E2704_RegulationMode mode = E2704_MODE_MANUAL;
-	short consigne = 10;
-	int max_channel = 1;
-
-	// ask number of channels
-	char buffer[3];
-	printf("Nombre de channel: ");
-	fgets(buffer, sizeof(buffer), stdin);
-	sscanf(buffer, "%d", &max_channel);
-
+	// ask & set command to send to the regulator
 	t_E2704_parameter_list *paramListWrite = initParameterList();
-
-	addParameter(paramListWrite, "Regulation Mode", 273);
-    addParameter(paramListWrite, "Target Set Point", 2);
-	addParameter(paramListWrite, "Output Power", 3);
-
-	for (int channel = 1; channel <= max_channel; channel++){
-		// Ask user modes & consigne
-		E2704_ask_service(&mode, &consigne);
-		
-		// Send consigne & mode to E2704
-		setParameterValue(paramListWrite, "Regulation Mode", (short) mode);
-		E2704_write_consigne(hPort, paramListWrite, "Regulation Mode", channel);
-
-		setParameterValue(paramListWrite, "Target Set Point", consigne);
-		setParameterValue(paramListWrite, "Output Power", consigne);
-
-		if(mode == E2704_MODE_AUTO)
-			E2704_write_consigne(hPort, paramListWrite, "Target Set Point", channel);
-		else if (mode = E2704_MODE_MANUAL)
-			E2704_write_consigne(hPort, paramListWrite, "Output Power", channel);
-	}
+	int max_channel = E2704_setServiceUser(hPort, paramListWrite);
 
 	printf("\n\tPress 'q' to quit program.\n\tExecute .\\Mod_E2704 -h for help.\n\n");
 
-	t_E2704_parameter_list *paramList = initParameterList();
-
-	addParameter(paramList, "Measured Value (PV)", 1);
-    addParameter(paramList, "Set Point (SP)", 5);
-	addParameter(paramList, "Regulation Mode", 273);
-    addParameter(paramList, "OutPut Power", 3);
-    addParameter(paramList, "P", 351);
-    addParameter(paramList, "I", 352);
-    addParameter(paramList, "D", 353);
+	// Init & set parameters to read
+	t_E2704_parameter_list *paramListRead = initParameterList();
+	E2704_setParameters(paramListRead);
 
 	// Print table & legend
-	printParameterRow(paramList);
-    printEnd(paramList, max_channel);
+	printParameterRow(paramListRead);
+    printEnd(paramListRead, max_channel);
 
 	// Print channels
 	for (int channel = 1; channel <= max_channel; channel++)
-		printChannel(paramList, channel);
+		printChannel(paramListRead, channel);
 
+	// While, print each values
 	BOOL requestExit = FALSE;
 
 	clock_t begin, end;
@@ -78,7 +44,7 @@ void E2704_main(HANDLE hPort)
 
 			// Get & print data for each channel
 			for (int channel = 1; channel <= max_channel; channel++) {
-				if(getValue(hPort, paramList, channel) == ERRORCOMM_INTERRUPT){
+				if(E2704_getValue(hPort, paramListRead, channel) == ERRORCOMM_INTERRUPT){
 					requestExit = TRUE;
 					break;
 				}
@@ -99,7 +65,7 @@ void E2704_main(HANDLE hPort)
 	}
 
 	// Free alocated elements in memory
-	freeList(paramList);
+	freeList(paramListRead);
 	freeList(paramListWrite);
 }
 
@@ -277,18 +243,12 @@ HANDLE connectionSerialPort()
 	BOOL connexionOk = FALSE;
 	HANDLE handleSerialPort = NULL;
 
-	// A COMPLETER
 	printDebug("connectionSerialPort", "");
+	t_E2704_config config = {0}; // = {2, 9600, 8, 0, 0};
 
-	t_E2704_config config = {2, 9600, 8, 0, 0};
-	/*
-	config.port = 2;
-	config.baud = 9600;
-	config.bits = 8;
-	config.bit_parity = 0;
-	config.bit_stop = 0;
-	*/
-	/*
+	if(config_file_exist("configSP.json") == TRUE){
+		config = E2704_getSerialPortConfig("configSP.json");
+	} else {
 		printf("Entrer le numero de port : ");
 		scanf("%d", &config.port); //2
 
@@ -304,7 +264,7 @@ HANDLE connectionSerialPort()
 
 		printf("Entrer le nombre de bits de stop? 0 (1 bit) / 1 (1.5 bits) / 2 (2 bits) : ");
 		scanf("%d", &config.bit_stop); //0
-	*/
+	}
 	printf("Connection: COM%d, baud=%d, bits=%d, parity=%d, stop=%d\n", config.port, config.baud, config.bits, config.bit_parity, config.bit_stop);
 
 	handleSerialPort = createSerialPort(config.port);

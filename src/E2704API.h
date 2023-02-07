@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <unistd.h> // files
 
 #include "Common.h"
 #include "E2704.h"
@@ -59,10 +60,14 @@ void setParameterValue(t_E2704_parameter_list *paramList, char *paramName, short
 void addParameter(t_E2704_parameter_list *paramList, char *paramName, int address);
 void printList(t_E2704_parameter_list *paramList);
 void freeList(t_E2704_parameter_list *paramList);
-ErrorComm getValue(HANDLE hPort, t_E2704_parameter_list *paramList, E2704_Channel channel);
 
+// -- E2704 function --
+
+ErrorComm E2704_getValue(HANDLE hPort, t_E2704_parameter_list *paramList, E2704_Channel channel);
 void E2704_write_consigne(HANDLE hPort, t_E2704_parameter_list *paramList, char *paramName, E2704_Channel channel);
+void E2704_setParameters(t_E2704_parameter_list *paramList);
 
+int E2704_setServiceUser(HANDLE hPort, t_E2704_parameter_list *paramList);
 
 // -- Print --
 
@@ -73,5 +78,10 @@ void clearChannel(t_E2704_parameter_list *paramList, E2704_Channel channel);
 void printLine(const int len, const int offset, char firstChar);
 void printEnd(t_E2704_parameter_list *paramList, E2704_Channel lastChannel);
 
+// -- Files --
+
+int config_file_exist(const char *configFileName);
+t_E2704_config E2704_getSerialPortConfig(const char *configFileName);
+void removeChar(char * str, char charToRemmove);
 
 #endif
