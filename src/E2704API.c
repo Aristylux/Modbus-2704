@@ -270,7 +270,7 @@ void E2704_setParametersWrite(t_E2704_parameter_list *paramList){
  */
 int E2704_setServiceUser(HANDLE hPort, t_E2704_parameter_list *paramList){
     if(config_file_exist(F_CONFIG_CONSIGNE)){
-        return E2704_getConsigneCongig(hPort, paramList, F_CONFIG_CONSIGNE);
+        return E2704_getConsigneConfig(hPort, paramList, F_CONFIG_CONSIGNE);
     } 
 
     E2704_RegulationMode mode = E2704_MODE_MANUAL;
@@ -292,6 +292,104 @@ int E2704_setServiceUser(HANDLE hPort, t_E2704_parameter_list *paramList){
 	}
     return max_channel;
 }
+
+/**
+ * @brief create and write a value at the address
+ * 
+ * @param hPort serial communication
+ * @param data value to write
+ * @param address at this address
+ */
+void E2704_write(HANDLE hPort, short data, int address){
+	char trameReceived[100];
+	int lengthTrameReceived = 99;
+	memset(trameReceived, '\0', sizeof(trameReceived));
+
+	ErrorComm codret = E2704_sendRequest(hPort, REQUEST_WRITE, data, address, trameReceived, &lengthTrameReceived);
+	if (codret != ERRORCOMM_NOERROR) printState(codret);
+}
+
+/**
+ * @brief create and read a value at address 
+ * 
+ * @param hPort serial connection
+ * @param _address address to read
+ * @return short value at the address
+ */
+short E2704_read(HANDLE hPort, int _address){
+	char trameReceived[100];
+	int lengthTrameReceived = 99;
+	memset(trameReceived, '\0', sizeof(trameReceived));
+
+	ErrorComm codret = E2704_sendRequest(hPort, REQUEST_READ, 0, _address, trameReceived, &lengthTrameReceived);
+	if (codret != ERRORCOMM_NOERROR) /*printState(codret);*/ return codret * -1;
+
+	// Decodage de la trame reçue
+	int address = 1;
+	char valuec[100];
+	int nbValue;
+	int codeFunction;
+
+	if (codret != ERRORCOMM_NOERROR || lengthTrameReceived == 0) /*printState(codret)*/ return codret * -1;
+	else {
+		//printTrame("Receive", trameReceived, lengthTrameReceived);
+		//codret = parseModbusResponse(trameReceived, lengthTrameReceived, REQUEST_READ, TYPE_SHORT);
+		codret = parseTrameModBus(trameReceived, lengthTrameReceived, valuec, &nbValue, &address, &codeFunction, INTEL);
+		if (codret != ERRORCOMM_NOERROR) /*printState(codret);*/ return codret * -1;
+	}
+	return ModBusShortAsciiToIeee(valuec, INTEL);
+}
+
+/**
+ * @brief sent a request trame
+ * 
+ * @param hPort serial communication
+ * @param requestType READ or WRITE
+ * @param data value
+ * @param address at this address
+ * @param trameOut result trame
+ * @param lenTrameOut length of the result trame
+ * @return ErrorComm communication state
+ */
+ErrorComm E2704_sendRequest(HANDLE hPort, TypeRequest requestType, short data, int address, char *trameOut, int *lenTrameOut){
+	char trameToSend[100];
+	int lengthTrameToSend = 0;
+
+	ErrorComm codret = ERRORCOMM_ERROR;
+
+	// Creation de la trame de requete Modbus
+	lengthTrameToSend = E2704_createRequestTrame(requestType, trameToSend, data, address);
+
+	//printTrame("Send", trameToSend, lengthTrameToSend);
+	// Envoie de la requete Modbus sur le supporte de communication et reception de la trame reponse
+	if (lengthTrameToSend)
+		codret = sendAndReceiveSerialPort(hPort, INFINITE, trameToSend, lengthTrameToSend, trameOut, lenTrameOut);
+	if (lengthTrameToSend == 0)
+		codret = ERRORCOMM_ERROR;
+}
+
+/**
+ * @brief create a trame of request
+ * 
+ * @param i_requestType type: READ or WRITE
+ * @param i_trameSend trame to send
+ * @param value value
+ * @param address address
+ * @return int length of the trame sended
+ */
+int E2704_createRequestTrame(TypeRequest i_requestType, char *i_trameSend, short value, int address)
+{
+	int address_slave = 1; // 1 car liason serie (il n'y en a qu'un seul)
+	int lengthTrameSend = 0;
+
+	if (i_requestType == REQUEST_READ)
+		lengthTrameSend = makeTrameLecModBus(address_slave, MODBUS_FUNCTION_READ_NWORDS, address, 1, i_trameSend, INTEL);
+	else if (i_requestType == REQUEST_WRITE)
+		lengthTrameSend = makeTrameEcrModBusFromShort(address_slave, MODBUS_FUNCTION_WRITE_WORD, address, value, i_trameSend, INTEL);
+
+	return lengthTrameSend;
+}
+
 
 // -- Print --
 
@@ -553,7 +651,15 @@ void E2704_getParameterConfig(const char *configFileName, t_E2704_parameter_list
     fclose(file);
 }
 
-int E2704_getConsigneCongig(HANDLE hPort, t_E2704_parameter_list *paramList, const char *configFileName){
+/**
+ * @brief 
+ * 
+ * @param hPort connection handler
+ * @param paramList list of actual parameter
+ * @param configFileName name of the file configuration
+ * @return int number of channels
+ */
+int E2704_getConsigneConfig(HANDLE hPort, t_E2704_parameter_list *paramList, const char *configFileName){
     char line[100];
     int nbr_channel = 0;
 

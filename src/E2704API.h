@@ -7,6 +7,7 @@
 #include <unistd.h> // files
 
 #include "Common.h"
+#include "Modbus.h"
 #include "E2704.h"
 
 // Files Names
@@ -41,6 +42,17 @@ typedef enum E2704_channel
     CH3
 } E2704_Channel;
 
+// -- Struct of config serial port --
+
+typedef struct E2704_config
+{
+    int port;
+    int baud;
+    short bits;
+    short bit_parity;
+    short bit_stop;
+} t_E2704_config;
+
 // -- List of parameters --
 
 typedef struct E2704_parameter
@@ -70,7 +82,7 @@ void addParameter(t_E2704_parameter_list *paramList, char *paramName, int addres
 void printList(t_E2704_parameter_list *paramList);
 void freeList(t_E2704_parameter_list *paramList);
 
-// -- E2704 function --
+// -- E2704 functions --
 
 ErrorComm E2704_getValue(HANDLE hPort, t_E2704_parameter_list *paramList, E2704_Channel channel);
 void E2704_write_consigne(HANDLE hPort, t_E2704_parameter_list *paramList, char *paramName, E2704_Channel channel);
@@ -78,6 +90,11 @@ void E2704_setConsigne(HANDLE hPort, t_E2704_parameter_list *paramList, E2704_Re
 void E2704_setParametersRead(t_E2704_parameter_list *paramList);
 void E2704_setParametersWrite(t_E2704_parameter_list *paramList);
 int E2704_setServiceUser(HANDLE hPort, t_E2704_parameter_list *paramList);
+
+ErrorComm E2704_sendRequest(HANDLE hPort, TypeRequest requestType, short data, int address, char *trameOut, int *lenTrameOut);
+void E2704_write(HANDLE hPort, short data, int address);
+short E2704_read(HANDLE hPort, int _address);
+int E2704_createRequestTrame(TypeRequest i_requestType, char *i_trameSend, short value, int address);
 
 // -- Print --
 
@@ -93,7 +110,7 @@ void printEnd(t_E2704_parameter_list *paramList, E2704_Channel lastChannel);
 int config_file_exist(const char *configFileName);
 t_E2704_config E2704_getSerialPortConfig(const char *configFileName);
 void E2704_getParameterConfig(const char *configFileName, t_E2704_parameter_list *paramList);
-int E2704_getConsigneCongig(HANDLE hPort, t_E2704_parameter_list *paramList, const char *configFileName);
+int E2704_getConsigneConfig(HANDLE hPort, t_E2704_parameter_list *paramList, const char *configFileName);
 void removeChar(char * str, char charToRemmove);
 void removeCharStart(char * str, char charToRemmove);
 
