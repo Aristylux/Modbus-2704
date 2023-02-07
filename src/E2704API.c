@@ -143,6 +143,7 @@ void freeList(t_E2704_parameter_list *paramList)
     paramList = NULL;
 }
 
+// -- E2704 function --
 
 /**
  * @brief Get the Value object, clear, and print new value
@@ -152,7 +153,7 @@ void freeList(t_E2704_parameter_list *paramList)
  * @param channel selected channel
  * @return ErrorComm communication state
  */
-ErrorComm getValue(HANDLE hPort, t_E2704_parameter_list *paramList, E2704_Channel channel){
+ErrorComm E2704_getValue(HANDLE hPort, t_E2704_parameter_list *paramList, E2704_Channel channel){
     static short value = 0;
     // CH1: off=0, CH2: off=1024, CH3: off=2048
     int offsetAddress = (channel - 1) * 1024;
@@ -195,6 +196,51 @@ void E2704_write_consigne(HANDLE hPort, t_E2704_parameter_list *paramList, char 
             break;
         }
 		params = params->next;
+	}
+}
+
+void E2704_setParameters(t_E2704_parameter_list *paramList){
+	addParameter(paramList, "Measured Value (PV)", 1);
+    addParameter(paramList, "Set Point (SP)", 5);
+	addParameter(paramList, "Regulation Mode", 273);
+    addParameter(paramList, "OutPut Power", 3);
+    addParameter(paramList, "P", 351);
+    addParameter(paramList, "I", 352);
+    addParameter(paramList, "D", 353);
+}
+
+int E2704_setServiceUser(HANDLE hPort, t_E2704_parameter_list *paramList){
+    E2704_RegulationMode mode = E2704_MODE_MANUAL;
+	short consigne = 10;
+    int max_channel = 1;
+    
+    // ask number of channels
+	char buffer[3];
+	printf("Nombre de channel: ");
+	fgets(buffer, sizeof(buffer), stdin);
+	sscanf(buffer, "%d", &max_channel);
+
+	
+
+	addParameter(paramListWrite, "Regulation Mode", 273);
+    addParameter(paramListWrite, "Target Set Point", 2);
+	addParameter(paramListWrite, "Output Power", 3);
+
+	for (int channel = 1; channel <= max_channel; channel++){
+		// Ask user modes & consigne
+		E2704_ask_service(&mode, &consigne);
+		
+		// Send consigne & mode to E2704
+		setParameterValue(paramListWrite, "Regulation Mode", (short) mode);
+		E2704_write_consigne(hPort, paramListWrite, "Regulation Mode", channel);
+
+		setParameterValue(paramListWrite, "Target Set Point", consigne);
+		setParameterValue(paramListWrite, "Output Power", consigne);
+
+		if(mode == E2704_MODE_AUTO)
+			E2704_write_consigne(hPort, paramListWrite, "Target Set Point", channel);
+		else if (mode = E2704_MODE_MANUAL)
+			E2704_write_consigne(hPort, paramListWrite, "Output Power", channel);
 	}
 }
 
@@ -347,4 +393,20 @@ void printEnd(t_E2704_parameter_list *paramList, E2704_Channel lastChannel)
         params = params->next;
     }
     printf("\033[%dC%c\n", offset, CORNER_B_R);
+}
+
+// -- Files --
+
+/**
+ * @brief verify if a config file existe or not
+ * 
+ * @param configFileName file name
+ * @return int 1 if exist, 0 not
+ */
+int config_file_exist(const char *configFileName){
+    // F_OK : check existence
+    // R_OK : chech can read
+    // W_OK : check can write
+    // X_OK : check can execute
+    return access(configFileName, F_OK) != -1;
 }
