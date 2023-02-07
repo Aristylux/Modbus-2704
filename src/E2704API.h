@@ -60,6 +60,9 @@ void printList(t_E2704_parameter_list *paramList);
 void freeList(t_E2704_parameter_list *paramList);
 ErrorComm getValue(HANDLE hPort, t_E2704_parameter_list *paramList, E2704_Channel channel);
 
+void E2704_write_consigne(HANDLE hPort, t_E2704_parameter_list *paramList, char *consigneName, short value, E2704_Channel channel);
+
+
 // -- Print --
 
 void printParameterRow(t_E2704_parameter_list *paramList);

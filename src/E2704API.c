@@ -153,6 +153,19 @@ ErrorComm getValue(HANDLE hPort, t_E2704_parameter_list *paramList, E2704_Channe
     }
 }
 
+void E2704_write_consigne(HANDLE hPort, t_E2704_parameter_list *paramList, char *consigneName, short value, E2704_Channel channel){
+	t_E2704_parameter *params = paramList->parameterList;
+
+	int offsetAddress = (channel - 1) * 1024;
+
+	while (params != NULL)
+	{
+		if(strcasecmp(params->name, consigneName) == 0)
+			E2704_write(hPort, value, params->address + offsetAddress);
+		params = params->next;
+	}
+	
+}
 
 // -- Print --
 

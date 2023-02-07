@@ -48,8 +48,6 @@ typedef struct E2704_config
 void E2704_main(HANDLE hPort);
 
 void E2704_ask_service(E2704_RegulationMode *regulation_mode, short *consigne);
-void E2704_set_regulation_mode(HANDLE hPort, E2704_RegulationMode mode);
-void E2704_set_consigne(HANDLE hPort, E2704_RegulationMode mode, short consigne);
 void E2704_write(HANDLE hPort, short data, int address);
 short E2704_read(HANDLE hPort, int _address);
 int E2704_createRequestTrame(TypeRequest i_requestType, char *i_trameSend, short value, int address);
