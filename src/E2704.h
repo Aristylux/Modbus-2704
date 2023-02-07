@@ -42,7 +42,7 @@ typedef struct E2704_config
     short bits;
     short bit_parity;
     short bit_stop;
-} T_E2704_config;
+} t_E2704_config;
 
 // Main program for E2704
 void E2704_main(HANDLE hPort);

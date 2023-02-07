@@ -125,7 +125,7 @@ void freeList(t_E2704_parameter_list *paramList)
 
 
 /**
- * @brief Get the Value object
+ * @brief Get the Value object, clear, and print new value
  * 
  * @param paramList 
  * @param channel 

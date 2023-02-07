@@ -15,16 +15,28 @@ void E2704_main(HANDLE hPort)
 	E2704_RegulationMode mode = E2704_MODE_MANUAL;
 	short consigne = 10;
 
-	// Ask user modes & consigne
-	E2704_ask_service(&mode, &consigne);
+	int max_channel = 1;
 
-	printf("mode: %d, consigne: %d\n", mode, consigne);
-	// Send consigne & mode to E2704
-	E2704_set_regulation_mode(hPort, mode);
-	E2704_set_consigne(hPort, mode, consigne);
+	printf("Nombre de channel: ");
+	scanf("%d", &max_channel);
 
-	short val = E2704_read(hPort, 2);
-	printf("val: %d\n", val);
+	for (int channel = 1; channel <= max_channel; channel++){
+		// Ask user modes & consigne
+		E2704_ask_service(&mode, &consigne);
+
+		printf("mode: %d, consigne: %d\n", mode, consigne);
+		// Send consigne & mode to E2704
+		//E2704_set_regulation_mode(hPort, mode);
+		int offsetAddress = (channel - 1) * 1024;
+		E2704_write(hPort, (short)mode, 5 + offsetAddress);
+
+		//E2704_set_consigne(hPort, mode, consigne);
+		if(mode == E2704_MODE_AUTO)
+			E2704_write(hPort, consigne, 1 + offsetAddress);
+		else if (mode = E2704_MODE_MANUAL)
+			E2704_write(hPort, consigne, 2 + offsetAddress);
+
+	}
 
 	printf("\n\tPress 'q' to quit program.\n\tExecute .\\Mod_E2704 -h for help.\n\n");
 
@@ -40,11 +52,13 @@ void E2704_main(HANDLE hPort)
 
 	// Print table & legend
 	printParameterRow(paramList);
-    printEnd(paramList, CH3);
+    printEnd(paramList, max_channel);
 
-	printChannel(paramList, CH1);
-	printChannel(paramList, CH2);
-	printChannel(paramList, CH3);
+	for (int channel = 1; channel <= max_channel; channel++)
+		printChannel(paramList, channel);
+
+
+	BOOL requestExit = FALSE;
 
 	clock_t begin, end;
 	begin = clock();
@@ -58,9 +72,13 @@ void E2704_main(HANDLE hPort)
 			begin = end;
 
 			// Get & print data for each channel
-			if(getValue(hPort, paramList, CH1) == ERRORCOMM_INTERRUPT) break;
-			if(getValue(hPort, paramList, CH2) == ERRORCOMM_INTERRUPT) break;
-			if(getValue(hPort, paramList, CH3) == ERRORCOMM_INTERRUPT) break;
+			for (int channel = 1; channel <= max_channel; channel++) {
+				if(getValue(hPort, paramList, channel) == ERRORCOMM_INTERRUPT){
+					requestExit = TRUE;
+					break;
+				}
+			}
+			if(requestExit == TRUE) break;
 		}
 
 		// Keybord interruption
@@ -91,7 +109,7 @@ void E2704_ask_service(E2704_RegulationMode *regulation_mode, short *consigne)
 	char buffer[10];
 	short input;
 
-	printf("Type de regulation? 0 (automatic) / 1 (manual)\n");
+	printf("Type de regulation? 0 (automatic) / 1 (manual): ");
 	while (1)
 	{
 		fgets(buffer, sizeof(buffer), stdin);
@@ -267,7 +285,7 @@ HANDLE connectionSerialPort()
 	// A COMPLETER
 	printDebug("connectionSerialPort", "");
 
-	T_E2704_config config = {2, 9600, 8, 0, 0};
+	t_E2704_config config = {2, 9600, 8, 0, 0};
 	/*
 	config.port = 2;
 	config.baud = 9600;
