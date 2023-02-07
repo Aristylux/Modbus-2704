@@ -12,13 +12,15 @@ void E2704_main(HANDLE hPort)
 {
 	E2704_RegulationMode mode = E2704_MODE_MANUAL;
 	short consigne = 10;
-
 	int max_channel = 1;
 
+	// ask number of channels
+	char buffer[3];
 	printf("Nombre de channel: ");
-	scanf("%d", &max_channel);
+	fgets(buffer, sizeof(buffer), stdin);
+	sscanf(buffer, "%d", &max_channel);
 
-	t_E2704_parameter_list *paramListWrite = initParameter();
+	t_E2704_parameter_list *paramListWrite = initParameterList();
 
 	addParameter(paramListWrite, "Regulation Mode", 273);
     addParameter(paramListWrite, "Target Set Point", 2);
@@ -27,8 +29,6 @@ void E2704_main(HANDLE hPort)
 	for (int channel = 1; channel <= max_channel; channel++){
 		// Ask user modes & consigne
 		E2704_ask_service(&mode, &consigne);
-
-		printf("mode: %d, consigne: %d\n", mode, consigne);
 		
 		// Send consigne & mode to E2704
 		setParameterValue(paramListWrite, "Regulation Mode", (short) mode);
@@ -45,7 +45,7 @@ void E2704_main(HANDLE hPort)
 
 	printf("\n\tPress 'q' to quit program.\n\tExecute .\\Mod_E2704 -h for help.\n\n");
 
-	t_E2704_parameter_list *paramList = initParameter();
+	t_E2704_parameter_list *paramList = initParameterList();
 
 	addParameter(paramList, "Measured Value (PV)", 1);
     addParameter(paramList, "Set Point (SP)", 5);
@@ -59,6 +59,7 @@ void E2704_main(HANDLE hPort)
 	printParameterRow(paramList);
     printEnd(paramList, max_channel);
 
+	// Print channels
 	for (int channel = 1; channel <= max_channel; channel++)
 		printChannel(paramList, channel);
 
@@ -97,6 +98,7 @@ void E2704_main(HANDLE hPort)
 		Sleep(10);
 	}
 
+	// Free alocated elements in memory
 	freeList(paramList);
 	freeList(paramListWrite);
 }
@@ -114,6 +116,7 @@ void E2704_ask_service(E2704_RegulationMode *regulation_mode, short *consigne)
 	char buffer[10];
 	short input;
 
+	printf("-----------------------------------------------\n");
 	printf("Type de regulation? 0 (automatic) / 1 (manual): ");
 	while (1)
 	{
@@ -123,20 +126,20 @@ void E2704_ask_service(E2704_RegulationMode *regulation_mode, short *consigne)
 		// Check consigne
 		if (input == E2704_MODE_AUTO)
 		{
-			printf("Consigne de temperature: ");
+			printf("Consigne de temperature:                      : ");
 			fgets(buffer, sizeof(buffer), stdin);
 			sscanf(buffer, "%d", consigne);
 			break;
 		}
 		else if (input == E2704_MODE_MANUAL)
 		{
-			printf("Consigne de puissance : ");
+			printf("Consigne de puissance:                        : ");
 			fgets(buffer, sizeof(buffer), stdin);
 			sscanf(buffer, "%d", consigne);
 			break;
 		}
 		else
-			puts("Invalid mode");
+			printf("Invalid mode                                  : ");
 	}
 	*regulation_mode = input;
 }

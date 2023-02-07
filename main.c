@@ -33,7 +33,7 @@ typedef struct E2704_parameter_list
 
 // -- List --
 
-t_E2704_parameter_list *initParameter(void);
+t_E2704_parameter_list *initParameterList(void);
 t_E2704_parameter *newParameter(char *paramName, int address);
 void addParameter(t_E2704_parameter_list *paramList, char *paramName, int address);
 void printList(t_E2704_parameter_list *paramList);
@@ -54,7 +54,7 @@ int main(void)
     srand(time(NULL));
 
     // Init
-    t_E2704_parameter_list *paramList = initParameter();
+    t_E2704_parameter_list *paramList = initParameterList();
 
     // add new parameter
     addParameter(paramList, "Measured Value (PV)", 1);
@@ -226,7 +226,7 @@ void printEnd(t_E2704_parameter_list *paramList, E2704_Channel lastChannel)
  * 
  * @return t_E2704_parameter_list* list
  */
-t_E2704_parameter_list *initParameter(void){
+t_E2704_parameter_list *initParameterList(void){
     t_E2704_parameter_list *paramList = malloc(sizeof(t_E2704_parameter_list));
     paramList->parameterList = NULL;
     paramList->num_params = 0;

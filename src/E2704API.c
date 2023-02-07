@@ -7,7 +7,7 @@
  * 
  * @return t_E2704_parameter_list* list
  */
-t_E2704_parameter_list *initParameter(void){
+t_E2704_parameter_list *initParameterList(void){
     t_E2704_parameter_list *paramList = malloc(sizeof(t_E2704_parameter_list));
     paramList->parameterList = NULL;
     paramList->num_params = 0;
@@ -45,6 +45,13 @@ t_E2704_parameter *newParameter(char *paramName, int address)
     return param;
 }
 
+/**
+ * @brief Set the Parameter Value object
+ * 
+ * @param paramList list
+ * @param paramName parameter name to put the value
+ * @param value value of the parameter
+ */
 void setParameterValue(t_E2704_parameter_list *paramList, char *paramName, short value){
     t_E2704_parameter *params = paramList->parameterList;
 

@@ -53,7 +53,7 @@ typedef struct E2704_parameter_list
 
 // -- List --
 
-t_E2704_parameter_list *initParameter(void);
+t_E2704_parameter_list *initParameterList(void);
 t_E2704_parameter *newParameter(char *paramName, int address);
 void setParameterValue(t_E2704_parameter_list *paramList, char *paramName, short value);
 void addParameter(t_E2704_parameter_list *paramList, char *paramName, int address);
