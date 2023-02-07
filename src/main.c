@@ -48,7 +48,7 @@ int main(int argc, char **argv)
 
     // -- Main program --
     // If debug mode enabled, go to verbal program
-    // If debug mode disabled, gt to E2704 visualisator
+    // If debug mode disabled, go to E2704 visualisator
     if (debugEnabled == FALSE)
         E2704_main(handleSerialPort);
     else

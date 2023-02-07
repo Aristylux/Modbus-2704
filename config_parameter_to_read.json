@@ -1,0 +1,10 @@
+{   
+    "Measured Value (PV)": 1,
+    "Set Point (SP)": 5,
+    "Regulation Mode": 273,
+    "OutPut Power": 3,
+    "Target Set Point": 2,
+    "P": 351,
+    "I": 352,
+    "D": 353
+}

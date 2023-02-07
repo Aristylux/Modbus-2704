@@ -8,43 +8,34 @@
 #include "E2704.h"
 #include "E2704API.h"
 
-int GlobaleAdresseRegulatorModbus = 1;
-
+/**
+ * @brief main for the E2704 visualisator
+ * 
+ * @param hPort serial communication
+ */
 void E2704_main(HANDLE hPort)
 {
-	E2704_RegulationMode mode = E2704_MODE_MANUAL;
-	short consigne = 10;
+	// ask & set command to send to the regulator
+	t_E2704_parameter_list *paramListWrite = initParameterList();
+	E2704_setParametersWrite(paramListWrite);
+	int max_channel = E2704_setServiceUser(hPort, paramListWrite);
 
-	// Ask user modes & consigne
-	E2704_ask_service(&mode, &consigne);
-
-	printf("mode: %d, consigne: %d\n", mode, consigne);
-	// Send consigne & mode to E2704
-	E2704_set_regulation_mode(hPort, mode);
-	E2704_set_consigne(hPort, mode, consigne);
-
-	short val = E2704_read(hPort, 2);
-	printf("val: %d\n", val);
+	// Init & set parameters to read
+	t_E2704_parameter_list *paramListRead = initParameterList();
+	E2704_setParametersRead(paramListRead);
 
 	printf("\n\tPress 'q' to quit program.\n\tExecute .\\Mod_E2704 -h for help.\n\n");
 
-	t_E2704_parameter_list *paramList = initParameter();
-
-	addParameter(paramList, "Measured Value (PV)", 1);
-    addParameter(paramList, "Set Point (SP)", 5);
-	addParameter(paramList, "Regulation Mode", 273);
-    addParameter(paramList, "OutPut Power", 3);
-    addParameter(paramList, "P", 351);
-    addParameter(paramList, "I", 352);
-    addParameter(paramList, "D", 353);
-
 	// Print table & legend
-	printParameterRow(paramList);
-    printEnd(paramList, CH3);
+	printParameterRow(paramListRead);
+    printEnd(paramListRead, max_channel);
 
-	printChannel(paramList, CH1);
-	printChannel(paramList, CH2);
-	printChannel(paramList, CH3);
+	// Print channels
+	for (int channel = 1; channel <= max_channel; channel++)
+		printChannel(paramListRead, channel);
+
+	// While, print each values
+	BOOL requestExit = FALSE;
 
 	clock_t begin, end;
 	begin = clock();
@@ -58,9 +49,13 @@ void E2704_main(HANDLE hPort)
 			begin = end;
 
 			// Get & print data for each channel
-			if(getValue(hPort, paramList, CH1) == ERRORCOMM_INTERRUPT) break;
-			if(getValue(hPort, paramList, CH2) == ERRORCOMM_INTERRUPT) break;
-			if(getValue(hPort, paramList, CH3) == ERRORCOMM_INTERRUPT) break;
+			for (int channel = 1; channel <= max_channel; channel++) {
+				if(E2704_getValue(hPort, paramListRead, channel) == ERRORCOMM_INTERRUPT){
+					requestExit = TRUE;
+					break;
+				}
+			}
+			if(requestExit == TRUE) break;
 		}
 
 		// Keybord interruption
@@ -75,7 +70,9 @@ void E2704_main(HANDLE hPort)
 		Sleep(10);
 	}
 
-	freeList(paramList);
+	// Free alocated elements in memory
+	freeList(paramListRead);
+	freeList(paramListWrite);
 }
 
 /**
@@ -91,7 +88,8 @@ void E2704_ask_service(E2704_RegulationMode *regulation_mode, short *consigne)
 	char buffer[10];
 	short input;
 
-	printf("Type de regulation? 0 (automatic) / 1 (manual)\n");
+	printf("-----------------------------------------------\n");
+	printf("Type de regulation? 0 (automatic) / 1 (manual): ");
 	while (1)
 	{
 		fgets(buffer, sizeof(buffer), stdin);
@@ -100,106 +98,80 @@ void E2704_ask_service(E2704_RegulationMode *regulation_mode, short *consigne)
 		// Check consigne
 		if (input == E2704_MODE_AUTO)
 		{
-			printf("Consigne de puissance : ");
+			printf("Consigne de temperature:                      : ");
 			fgets(buffer, sizeof(buffer), stdin);
 			sscanf(buffer, "%d", consigne);
 			break;
 		}
 		else if (input == E2704_MODE_MANUAL)
 		{
-			printf("Consigne de temperature : ");
+			printf("Consigne de puissance:                        : ");
 			fgets(buffer, sizeof(buffer), stdin);
 			sscanf(buffer, "%d", consigne);
 			break;
 		}
 		else
-			puts("Invalid mode");
+			printf("Invalid mode                                  : ");
 	}
 	*regulation_mode = input;
 }
 
-void E2704_set_regulation_mode(HANDLE hPort, E2704_RegulationMode mode)
+/**
+ * @brief set serial port communication,
+ * if json config file exist, set the connection, 
+ * else, set connection by user
+ * 
+ * @return HANDLE 
+ */
+HANDLE connectionSerialPort()
 {
-	E2704_write(hPort, (short)mode, 5);
-}
+	BOOL connexionOk = FALSE;
+	HANDLE handleSerialPort = NULL;
 
-void E2704_set_consigne(HANDLE hPort, E2704_RegulationMode mode, short consigne)
-{
-	if(mode == E2704_MODE_AUTO)
-		E2704_write(hPort, consigne, 1);
-	else if (mode = E2704_MODE_MANUAL)
-		E2704_write(hPort, consigne, 2);
-}
+	printDebug("connectionSerialPort", "");
+	t_E2704_config config = {0}; // = {2, 9600, 8, 0, 0};
 
-/* -- -- */
+	// Read config file if exist, else ask to the user
+	if(config_file_exist(F_CONFIG_SERIAL) == TRUE){
+		config = E2704_getSerialPortConfig(F_CONFIG_SERIAL);
+	} else {
+		printf("Entrer le numero de port : ");
+		scanf("%d", &config.port); //2
 
-ErrorComm E2704_sendRequest(HANDLE hPort, TypeRequest requestType, short data, int address, char *trameOut, int *lenTrameOut){
-	char trameToSend[100];
-	int lengthTrameToSend = 0;
+		puts("*********** Parametrage du port serie ***********");
+		printf("Entrer la vitesse de transmission : ");
+		scanf("%d", &config.baud); //9600
 
-	ErrorComm codret = ERRORCOMM_ERROR;
+		printf("Entrer le nombre de bits de donnees? (5-8) : ");
+		scanf("%d", &config.bits);	//8
 
-	// Creation de la trame de requete Modbus
-	lengthTrameToSend = E2704_createRequestTrame(requestType, trameToSend, data, address);
+		printf("Entrer la parite? 0 (pas de parite) / 1 (Parite impair) / 2 (Partie pair) : ");
+		scanf("%d", &config.bit_parity); //0
 
-	//printTrame("Send", trameToSend, lengthTrameToSend);
-	// Envoie de la requete Modbus sur le supporte de communication et reception de la trame reponse
-	if (lengthTrameToSend)
-		codret = sendAndReceiveSerialPort(hPort, INFINITE, trameToSend, lengthTrameToSend, trameOut, lenTrameOut);
-	if (lengthTrameToSend == 0)
-		codret = ERRORCOMM_ERROR;
-}
-
-void E2704_write(HANDLE hPort, short data, int address){
-	char trameReceived[100];
-	int lengthTrameReceived = 99;
-	memset(trameReceived, '\0', sizeof(trameReceived));
-
-	ErrorComm codret = E2704_sendRequest(hPort, REQUEST_WRITE, data, address, trameReceived, &lengthTrameReceived);
-	if (codret != ERRORCOMM_NOERROR) printState(codret);
-}
-
-short E2704_read(HANDLE hPort, int _address){
-	char trameReceived[100];
-	int lengthTrameReceived = 99;
-	memset(trameReceived, '\0', sizeof(trameReceived));
-
-	ErrorComm codret = E2704_sendRequest(hPort, REQUEST_READ, 0, _address, trameReceived, &lengthTrameReceived);
-	if (codret != ERRORCOMM_NOERROR) /*printState(codret);*/ return codret * -1;
-
-	// Decodage de la trame reçue
-	int address = 1;
-	char valuec[100];
-	int nbValue;
-	int codeFunction;
-
-	if (codret != ERRORCOMM_NOERROR || lengthTrameReceived == 0) /*printState(codret)*/ return codret * -1;
-	else {
-		//printTrame("Receive", trameReceived, lengthTrameReceived);
-		//codret = parseModbusResponse(trameReceived, lengthTrameReceived, REQUEST_READ, TYPE_SHORT);
-		codret = parseTrameModBus(trameReceived, lengthTrameReceived, valuec, &nbValue, &address, &codeFunction, INTEL);
-		if (codret != ERRORCOMM_NOERROR) /*printState(codret);*/ return codret * -1;
+		printf("Entrer le nombre de bits de stop? 0 (1 bit) / 1 (1.5 bits) / 2 (2 bits) : ");
+		scanf("%d", &config.bit_stop); //0
 	}
-	return ModBusShortAsciiToIeee(valuec, INTEL);
+	printf("Connection: COM%d, baud=%d, bits=%d, parity=%d, stop=%d\n", config.port, config.baud, config.bits, config.bit_parity, config.bit_stop);
+
+	handleSerialPort = createSerialPort(config.port);
+	connexionOk = setParamSerialPort(handleSerialPort, config.baud, config.bits, config.bit_parity, config.bit_stop);
+
+	if (connexionOk != TRUE)
+	{
+		printDebug("connectionSerialPort", "Com ERROR");
+		puts("Verify that the port is plugged in and not in use.");
+		terminateSerialPort(handleSerialPort);
+		handleSerialPort = NULL;
+	}
+	else
+	{
+		printDebug("connectionSerialPort", "Com OK");
+		puts("Connection Established.");
+	}
+	return handleSerialPort;
 }
 
-// -- --
-
-int E2704_createRequestTrame(TypeRequest i_requestType, char *i_trameSend, short value, int address)
-{
-	int address_slave = 1; // 1 car liason serie (il n'y en a qu'un seul)
-
-	int lengthTrameSend = 0;
-
-	if (i_requestType == REQUEST_READ)
-		lengthTrameSend = makeTrameLecModBus(address_slave, MODBUS_FUNCTION_READ_NWORDS, address, 1, i_trameSend, INTEL);
-	else if (i_requestType == REQUEST_WRITE)
-		lengthTrameSend = makeTrameEcrModBusFromShort(address_slave, MODBUS_FUNCTION_WRITE_WORD, address, value, i_trameSend, INTEL);
-
-	return lengthTrameSend;
-}
-
-// -- --
+// -- Debug --
 
 void E2704_debug(HANDLE hPort)
 {
@@ -259,57 +231,14 @@ void E2704_debug(HANDLE hPort)
 	}
 }
 
-HANDLE connectionSerialPort()
-{
-	BOOL connexionOk = FALSE;
-	HANDLE handleSerialPort = NULL;
-
-	// A COMPLETER
-	printDebug("connectionSerialPort", "");
-
-	T_E2704_config config = {2, 9600, 8, 0, 0};
-	/*
-	config.port = 2;
-	config.baud = 9600;
-	config.bits = 8;
-	config.bit_parity = 0;
-	config.bit_stop = 0;
-	*/
-	/*
-		printf("Entrer le numero de port : ");
-		scanf("%d", &config.port); //2
-
-		puts("*********** Parametrage du port serie ***********");
-		printf("Entrer la vitesse de transmission : ");
-		scanf("%d", &config.baud); //9600
-
-		printf("Entrer le nombre de bits de donnees? (5-8) : ");
-		scanf("%d", &config.bits);	//8
-
-		printf("Entrer la parite? 0 (pas de parite) / 1 (Parite impair) / 2 (Partie pair) : ");
-		scanf("%d", &config.bit_parity); //0
-
-		printf("Entrer le nombre de bits de stop? 0 (1 bit) / 1 (1.5 bits) / 2 (2 bits) : ");
-		scanf("%d", &config.bit_stop); //0
-	*/
-	printf("Connection: COM%d, baud=%d, bits=%d, parity=%d, stop=%d\n", config.port, config.baud, config.bits, config.bit_parity, config.bit_stop);
-
-	handleSerialPort = createSerialPort(config.port);
-	connexionOk = setParamSerialPort(handleSerialPort, config.baud, config.bits, config.bit_parity, config.bit_stop);
-
-	if (connexionOk != TRUE)
-	{
-		printDebug("connectionSerialPort", "Com ERROR");
-		puts("Verify that the port is plugged in and not in use.");
-		terminateSerialPort(handleSerialPort);
-		handleSerialPort = NULL;
-	}
-	else
-		printDebug("connectionSerialPort", "Com OK");
-
-	return handleSerialPort;
-}
-
+/**
+ * @brief Create a Request Trame
+ * 
+ * @param i_requestType type of the request: READ, WRITE
+ * @param i_trameSend trame to send
+ * @param i_typeVal type of val: short, int, float
+ * @return int length of the trame send
+ */
 int createRequestTrame(TypeRequest i_requestType, char *i_trameSend, TypeVal *i_typeVal)
 {
 	int lengthTrameSend = 0;
@@ -383,6 +312,17 @@ int createRequestTrame(TypeRequest i_requestType, char *i_trameSend, TypeVal *i_
 	return lengthTrameSend;
 }
 
+/**
+ * @brief transform data revieved in correct values
+ * TP3
+ * Used for debug
+ * 
+ * @param i_trameReceive trame recieved
+ * @param i_lengthTrameReceived length
+ * @param i_requestType type of the request: READ or WRITE
+ * @param i_typeVal short, int, float 
+ * @return ErrorComm: state of the communication
+ */
 ErrorComm parseModbusResponse(char *i_trameReceive, int i_lengthTrameReceived, TypeRequest i_requestType, TypeVal i_typeVal)
 {
 	ErrorComm codret = ERRORCOMM_ERROR;
@@ -419,6 +359,11 @@ ErrorComm parseModbusResponse(char *i_trameReceive, int i_lengthTrameReceived, T
 	return codret;
 }
 
+/**
+ * @brief Print the state of the connection
+ * 
+ * @param codret code state
+ */
 void printState(ErrorComm codret)
 {
 	switch (codret)
@@ -456,24 +401,17 @@ void printState(ErrorComm codret)
 	return;
 }
 
+/**
+ * @brief Print a trame in hexadecimal
+ * 
+ * @param type type of trame: recieve, send
+ * @param trame actual trame
+ * @param lengthTrame length
+ */
 void printTrame(char *type, char trame[100], int lengthTrame)
 {
 	printf("%s trame (length = %i):", type, lengthTrame);
 	for (int i = 0; i < lengthTrame; i++)
 		printf("%02X ", ((unsigned char)trame[i]));
 	printf("\n");
-}
-
-void printHelp(void)
-{
-	puts("\tHELP\n");
-	puts("Usage:");
-	puts("\t.\\Mod_E2704.exe [Option]\n");
-	puts("Options:");
-	puts("\t-h\tPrint Help");
-	puts("\t-d\tDebug mode\n");
-	puts("Examples:");
-	puts("\t.\\Mod_E2704.exe");
-	puts("\t.\\Mod_E2704.exe -h");
-	puts("\t.\\Mod_E2704.exe -d\n\n");
 }

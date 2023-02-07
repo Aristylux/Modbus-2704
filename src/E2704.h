@@ -28,50 +28,30 @@ typedef enum typeval
     NO_TYPE
 } TypeVal;
 
+// -- Regulation type --
+
 typedef enum E2704_regulationMode
 {
     E2704_MODE_AUTO = 0,
     E2704_MODE_MANUAL
 } E2704_RegulationMode;
 
-// E2704 API
-typedef struct E2704_config
-{
-    int port;
-    int baud;
-    short bits;
-    short bit_parity;
-    short bit_stop;
-} T_E2704_config;
 
-// Main program for E2704
+//-- E2704 primary function --
+
 void E2704_main(HANDLE hPort);
-
 void E2704_ask_service(E2704_RegulationMode *regulation_mode, short *consigne);
-void E2704_set_regulation_mode(HANDLE hPort, E2704_RegulationMode mode);
-void E2704_set_consigne(HANDLE hPort, E2704_RegulationMode mode, short consigne);
-void E2704_write(HANDLE hPort, short data, int address);
-short E2704_read(HANDLE hPort, int _address);
-int E2704_createRequestTrame(TypeRequest i_requestType, char *i_trameSend, short value, int address);
-
-// Debug, like TP3
-void E2704_debug(HANDLE hPort);
 
 HANDLE connectionSerialPort();
 
-// Used for debug
-int createRequestTrame(TypeRequest i_requestType, char *i_trameSend, TypeVal *i_typeVal);
+// -- Debug --
+// like TP3
 
-// Used for debug
+void E2704_debug(HANDLE hPort);
+int createRequestTrame(TypeRequest i_requestType, char *i_trameSend, TypeVal *i_typeVal);
 ErrorComm parseModbusResponse(char *i_trameReceive, int i_lengthTrameReceived, TypeRequest i_requestType, TypeVal i_typeVal);
 
-// Print State of the connection
 void printState(ErrorComm codret);
-
-// Print a trame in Hex
 void printTrame(char *type, char trame[100], int lenghtTrame);
-
-// Print help
-void printHelp(void);
 
 #endif

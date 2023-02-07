@@ -7,7 +7,7 @@
 #define NO 0
 #define YES 1
 
-#define DEBUG YES
+#define DEBUG NO
 
 typedef enum typemode
 {
@@ -18,10 +18,10 @@ typedef enum typemode
     MODE_ERROR_IA   // invalid argument
 } TypeMode;
 
-// Print debug if actif
-void printDebug(char *function, char *message);
 
-// Check arguments
+void printDebug(char *function, char *message);
 int checkArguments(int argc, char **argv);
+
+void printHelp(void);
 
 #endif
