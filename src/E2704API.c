@@ -45,6 +45,19 @@ t_E2704_parameter *newParameter(char *paramName, int address)
     return param;
 }
 
+void setParameterValue(t_E2704_parameter_list *paramList, char *paramName, short value){
+    t_E2704_parameter *params = paramList->parameterList;
+
+	while (params != NULL)
+	{
+		if(strcasecmp(params->name, paramName) == 0){
+			params->value = value;
+            break;
+        }
+		params = params->next;
+	}
+}
+
 /**
  * @brief Add new parameter at the end of the list
  *
@@ -127,8 +140,10 @@ void freeList(t_E2704_parameter_list *paramList)
 /**
  * @brief Get the Value object, clear, and print new value
  * 
- * @param paramList 
- * @param channel 
+ * @param hPort handle port comm
+ * @param paramList list
+ * @param channel selected channel
+ * @return ErrorComm communication state
  */
 ErrorComm getValue(HANDLE hPort, t_E2704_parameter_list *paramList, E2704_Channel channel){
     static short value = 0;
@@ -153,18 +168,27 @@ ErrorComm getValue(HANDLE hPort, t_E2704_parameter_list *paramList, E2704_Channe
     }
 }
 
-void E2704_write_consigne(HANDLE hPort, t_E2704_parameter_list *paramList, char *consigneName, short value, E2704_Channel channel){
+/**
+ * @brief write desired value of selected parameter
+ * 
+ * @param hPort handle port comm
+ * @param paramList list of parameter
+ * @param paramaterName parameter name to select 
+ * @param channel selected channel
+ */
+void E2704_write_consigne(HANDLE hPort, t_E2704_parameter_list *paramList, char *paramName, E2704_Channel channel){
 	t_E2704_parameter *params = paramList->parameterList;
 
 	int offsetAddress = (channel - 1) * 1024;
 
 	while (params != NULL)
 	{
-		if(strcasecmp(params->name, consigneName) == 0)
-			E2704_write(hPort, value, params->address + offsetAddress);
+		if(strcasecmp(params->name, paramName) == 0){
+			E2704_write(hPort, params->value, params->address + offsetAddress);
+            break;
+        }
 		params = params->next;
 	}
-	
 }
 
 // -- Print --

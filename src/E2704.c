@@ -31,11 +31,16 @@ void E2704_main(HANDLE hPort)
 		printf("mode: %d, consigne: %d\n", mode, consigne);
 		
 		// Send consigne & mode to E2704
-		E2704_write_consigne(hPort, paramListWrite, "Regulation Mode", (short) mode, channel);
+		setParameterValue(paramListWrite, "Regulation Mode", (short) mode);
+		E2704_write_consigne(hPort, paramListWrite, "Regulation Mode", channel);
+
+		setParameterValue(paramListWrite, "Target Set Point", consigne);
+		setParameterValue(paramListWrite, "Output Power", consigne);
+
 		if(mode == E2704_MODE_AUTO)
-			E2704_write_consigne(hPort, paramListWrite, "Target Set Point", consigne, channel);
+			E2704_write_consigne(hPort, paramListWrite, "Target Set Point", channel);
 		else if (mode = E2704_MODE_MANUAL)
-			E2704_write_consigne(hPort, paramListWrite, "Output Power", consigne, channel);
+			E2704_write_consigne(hPort, paramListWrite, "Output Power", channel);
 	}
 
 	printf("\n\tPress 'q' to quit program.\n\tExecute .\\Mod_E2704 -h for help.\n\n");
