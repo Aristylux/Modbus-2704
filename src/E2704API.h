@@ -9,6 +9,13 @@
 #include "Common.h"
 #include "E2704.h"
 
+// Files Names
+
+#define F_CONFIG_SERIAL     (char*) "config_serial.json"
+#define F_CONFIG_PARAM_R    (char*) "config_parameter_to_read.json"
+
+// Characters for box
+
 #define CORNER_T_L  (char) 218  // Top left corner              (┌)
 #define CORNER_T_R  (char) 191  // Top right corner             (┐)
 #define CORNER_B_L  (char) 192  // Bottom left corner           (└)
@@ -82,6 +89,7 @@ void printEnd(t_E2704_parameter_list *paramList, E2704_Channel lastChannel);
 
 int config_file_exist(const char *configFileName);
 t_E2704_config E2704_getSerialPortConfig(const char *configFileName);
+void E2704_getParameterRead(const char *configFileName, t_E2704_parameter_list *paramList);
 void removeChar(char * str, char charToRemmove);
 
 #endif

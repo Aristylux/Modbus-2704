@@ -238,6 +238,13 @@ void E2704_debug(HANDLE hPort)
 	}
 }
 
+/**
+ * @brief set serial port communication,
+ * if json config file exist, set the connection, 
+ * else, set connection by user
+ * 
+ * @return HANDLE 
+ */
 HANDLE connectionSerialPort()
 {
 	BOOL connexionOk = FALSE;
@@ -246,8 +253,8 @@ HANDLE connectionSerialPort()
 	printDebug("connectionSerialPort", "");
 	t_E2704_config config = {0}; // = {2, 9600, 8, 0, 0};
 
-	if(config_file_exist("configSP.json") == TRUE){
-		config = E2704_getSerialPortConfig("configSP.json");
+	if(config_file_exist(F_CONFIG_SERIAL) == TRUE){
+		config = E2704_getSerialPortConfig(F_CONFIG_SERIAL);
 	} else {
 		printf("Entrer le numero de port : ");
 		scanf("%d", &config.port); //2

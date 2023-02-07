@@ -200,13 +200,17 @@ void E2704_write_consigne(HANDLE hPort, t_E2704_parameter_list *paramList, char 
 }
 
 void E2704_setParameters(t_E2704_parameter_list *paramList){
-	addParameter(paramList, "Measured Value (PV)", 1);
-    addParameter(paramList, "Set Point (SP)", 5);
-	addParameter(paramList, "Regulation Mode", 273);
-    addParameter(paramList, "OutPut Power", 3);
-    addParameter(paramList, "P", 351);
-    addParameter(paramList, "I", 352);
-    addParameter(paramList, "D", 353);
+    if(config_file_exist(F_CONFIG_PARAM_R)){
+        E2704_getParameterRead(F_CONFIG_PARAM_R, paramList);
+    } else {
+        addParameter(paramList, "Measured Value (PV)", 1);
+        addParameter(paramList, "Set Point (SP)", 5);
+        addParameter(paramList, "Regulation Mode", 273);
+        addParameter(paramList, "OutPut Power", 3);
+        addParameter(paramList, "P", 351);
+        addParameter(paramList, "I", 352);
+        addParameter(paramList, "D", 353);
+    }
 }
 
 int E2704_setServiceUser(HANDLE hPort, t_E2704_parameter_list *paramList){
@@ -253,7 +257,6 @@ int E2704_setServiceUser(HANDLE hPort, t_E2704_parameter_list *paramList){
 void printParameterRow(t_E2704_parameter_list *paramList)
 {
     t_E2704_parameter *params = paramList->parameterList;
-    // int len = maxCharRow(params);
 
     printLine(paramList->len_param + 2, 0, CORNER_T_L);
     printf("%c Parameters\n", LINE_H);
@@ -276,7 +279,6 @@ void printParameterRow(t_E2704_parameter_list *paramList)
  */
 void printChannel(t_E2704_parameter_list *paramList, E2704_Channel channel)
 {
-    //clearChannel(paramList, channel);
     t_E2704_parameter *params = paramList->parameterList;
 
     printf("\033[%dA", paramList->num_params + 4);
@@ -426,6 +428,7 @@ t_E2704_config E2704_getSerialPortConfig(const char *configFileName){
         // Remove parasit char
         removeChar(line, ' ');
         removeChar(line, '\t');
+
         // Split & retieve values
         char *key = strtok(line, ":");
         char *value = strtok(NULL, "\n");
@@ -453,6 +456,42 @@ t_E2704_config E2704_getSerialPortConfig(const char *configFileName){
     return config;
 }
 
+void E2704_getParameterRead(const char *configFileName, t_E2704_parameter_list *paramList){
+    char line[100];
+
+    // Open file
+    FILE *file = fopen(configFileName, "r");
+    if (file == NULL) {
+        perror("fopen");
+        return;
+    }
+
+    // Read file
+    while (fgets(line, sizeof(line), file)) {
+        // Remove parasit char
+        removeChar(line, ' ');
+        removeChar(line, '\t');
+
+        // Split & retieve values
+        char *name = strtok(line, ":");
+        char *address = strtok(NULL, "\n");
+
+        if(strchr(name, '"') == NULL) continue;
+
+        removeChar(name, '"');
+
+        if (address != NULL) {
+            address[strlen(address) - 1] = '\0';
+        }
+
+        //printf("add: %s, %d\n", name, atoi(address));
+        addParameter(paramList, name, atoi(address));
+    }
+
+    // Close & return
+    fclose(file);
+}
+
 /**
  * @brief remove a specified char
  * 
@@ -460,16 +499,13 @@ t_E2704_config E2704_getSerialPortConfig(const char *configFileName){
  * @param charToRemmove char to remove
  */
 void removeChar(char * str, char charToRemmove){
-    int i, j;
     int len = strlen(str);
-    for(i=0; i<len; i++)
+    for(int i = 0; i < len; i++)
     {
         if(str[i] == charToRemmove)
         {
-            for(j=i; j<len; j++)
-            {
+            for(int j = i; j < len; j++)
                 str[j] = str[j+1];
-            }
             len--;
             i--;
         }
