@@ -1,5 +1,5 @@
 {   
-    "port": 2,
+    "port": 4,
 	"baud": 9600,
 	"bits": 8,
 	"bit_parity": 0,

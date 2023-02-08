@@ -218,6 +218,7 @@ ErrorComm recvSerialPort( HANDLE hPort, int timeOut, char *i_pDonnees, int *i_nb
 				code_erreur = ERRORCOMM_INTERRUPT;
 				break;
 			}
+			
 			// If a keypress is active, active interruption
 			if (kbhit())
 			{
