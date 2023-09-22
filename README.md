@@ -4,6 +4,8 @@ The purpose of that project is to create a program for control an Erotherm 2704 
 
 ![Eurotherm 2704](./img/2704.webp)
 
+**Note:** This project was developed with Window, not GNU/Linux.
+
 # Use
 
 Execute : `.\Mod_E2704.exe`
